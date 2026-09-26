@@ -189,7 +189,15 @@ function rvSet(el: HTMLElement, st: RvState) {
   if (it?.ctl) setRv(it, st, !it.st);
 }
 function rvRelease(els: HTMLElement[]) {
-  for (const el of els) { const it = rvMap.get(el); if (it?.ctl) { it.ctl = false; rvIO?.observe(el); } }
+  for (const el of els) { const it = rvMap.get(el); if (it?.ctl) { it.ctl = false; el.classList.remove('rv-ctl'); rvIO?.observe(el); } }
+}
+// Stacked pinned blocks share one spot, so focus must never keep an outgoing one on screen.
+// Move it to the incoming block's control first; the outgoing block then leaves normally.
+function handOff(from: HTMLElement | undefined, to: HTMLElement | undefined) {
+  const f = document.activeElement;
+  if (!from || !to || !(f instanceof HTMLElement) || !from.contains(f)) return;
+  if (!to.matches('a, button, [tabindex]')) to.tabIndex = -1;
+  to.focus({ preventScroll: true });
 }
 
 function rvRegister() {
@@ -208,6 +216,7 @@ function rvRegister() {
       });
     } else if (el.matches(RV_DISPLAY) && splitDisplay(el)) el.classList.add('rv-d');
     else el.classList.add('rv-b');
+    if (ctl) el.classList.add('rv-ctl');
     rvMap.set(el, it);
   };
   for (const el of pool) {
@@ -303,9 +312,11 @@ const applyFields = () => {
   const mix = gsap.utils.clamp(0, 1, (f - 0.18) / 0.5);
   const active = f < 0.43 ? k : k + 1;
   if (active !== activeSlide) {
+    const roving = gsap.utils.clamp(1, ticks.length, active) - 1;
+    // keyboard focus in the outgoing field moves to the incoming field's index button
+    handOff(slides[activeSlide], ticks[roving] ?? slides[active]);
     activeSlide = active;
     slides.forEach((s, i) => s.classList.toggle('is-active', i === active));
-    const roving = gsap.utils.clamp(1, ticks.length, active) - 1;
     ticks.forEach((b, i) => {
       b.tabIndex = i === roving ? 0 : -1;
       if (i + 1 === active) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
@@ -342,7 +353,20 @@ const unpinFields = () => {
   fieldsSec.classList.remove('pinned');
   fieldsSec.dataset.agent = 'off';
   rvRelease(slides);
+  slideStops();
 };
+// On phones a pinned slide scrolls, and Chrome makes any scroller without focusable children a tab stop.
+// A hidden slide's entrance lift briefly overflows it, so it would become a stop and then drop focus
+// to <body> once the lift settles. A slide is a stop only if its settled content really needs scrolling.
+function slideStops() {
+  const pinned = fieldsSec.classList.contains('pinned');
+  slides.forEach((s) => {
+    if (!pinned) { s.removeAttribute('tabindex'); return; }
+    const last = [...s.children].filter((c): c is HTMLElement => c instanceof HTMLElement && !c.classList.contains('sr-only')).pop();
+    const scrolls = getComputedStyle(s).overflowY !== 'visible' && !!last && last.offsetTop + last.offsetHeight > s.clientHeight + 1;
+    s.tabIndex = scrolls && !s.querySelector('a, button') ? 0 : -1;
+  });
+}
 
 // ---------------------------------------------------------------- not a god: snap
 const asiSec = $('#asi')!;
@@ -350,6 +374,7 @@ const lines = $$('.asi__line', asiSec);
 let asiP = 0;
 const applyAsi = () => {
   const i = asiP < 0.3 ? 0 : asiP < 0.64 ? 1 : 2;
+  lines.forEach((l, j) => { if (j !== i) handOff(l, lines[i]); });
   lines.forEach((l, j) => { l.classList.toggle('is-active', j === i); rvSet(l, j === i ? 'in' : j < i ? 'above' : 'below'); });
   const base = place.asi();
   if (i === 0) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base });
@@ -457,8 +482,10 @@ if (trace && !reduced) {
 const onScroll = () => { updateNav(); updateZone(); if (rvIO) rvSettle(); };
 if (lenis) lenis.on('scroll', onScroll); else addEventListener('scroll', onScroll, { passive: true });
 let rvResizeT = 0;
-addEventListener('resize', () => { lastZone = ''; onScroll(); clearTimeout(rvResizeT); rvResizeT = window.setTimeout(rvRebuild, 400); });
+addEventListener('resize', () => { lastZone = ''; onScroll(); clearTimeout(rvResizeT); rvResizeT = window.setTimeout(() => { rvRebuild(); slideStops(); }, 400); });
 onScroll();
+slideStops();
+document.fonts?.ready.then(slideStops);
 
 // start the reveal once the pinned chapters exist, so their slides are handed to the pin logic
 if (!reduced) {

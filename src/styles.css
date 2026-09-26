@@ -423,8 +423,8 @@ h1, h2, h3 { text-wrap: balance; }
   /* compositor hints only while something is moving */
   .rv-busy, .rv-busy > .rv-c { will-change: transform, opacity, filter; }
   .rv-busy .rw { will-change: transform; }
-  /* anything holding keyboard focus is always shown */
-  [data-rv]:focus-within, [data-rv]:focus-within > .rv-c, [data-rv]:focus-within .rw { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
+  /* anything holding keyboard focus is always shown; stacked pinned blocks hand focus on instead (main.ts handOff) */
+  [data-rv]:not(.rv-ctl):focus-within, [data-rv]:not(.rv-ctl):focus-within > .rv-c, [data-rv]:not(.rv-ctl):focus-within .rw { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
 
   /* first viewport: lines rise on load straight from CSS (no JS wait, no flash), then the reveal system takes over */
   .hero__title > span:not(.sr-only) { animation: rv-line calc(var(--rv-in) * 1.2) var(--ease) backwards; }

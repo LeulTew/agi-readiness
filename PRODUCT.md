@@ -22,7 +22,7 @@ Not a hype page and not a doom page. A personal, checkable definition ("one agen
 Link shared in Telegram; read on mobile first. Static site, free hosting (GitHub Pages under github.com/LeulTew). Must load fast on mobile data.
 
 ## Capabilities and Constraints
-- Verbatim quote of Leul's AGI definition (brief) must appear unchanged except for obvious typo fixes (lowercase "i" → "I").
+- Leul's AGI definition is presented as a first-person statement rewritten by GPT-6 Astra (user instruction, 27 Sep 2026), not as a verbatim quote. Every point of the original must survive: one general, multimodal agent; professional level across most fields (STEM: software, architecture, engineering schematics, bioengineering, chemistry, mathematics; beyond STEM: philosophy, photography/videography, editing, the whole film process from writing to directing to editing); not necessarily the top 0.1%; without a human constantly guiding it.
 - Must add: "it won't even cure cancer or solve world hunger in a snap — those are things of a godlike AI / ASI", then "it doesn't even need to cure cancer."
 - AI 2027 assessment must cite sources and date its evidence; no invented benchmarks or numbers.
 - The site does not mention the Telegram chat or the friend it came from (user instruction, 26 Sep 2026). It opens straight on the definition.

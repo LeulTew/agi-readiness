@@ -117,6 +117,176 @@ const place = {
   asi: () => (mobile() ? band(lines[0], 0.94) : { x: 0.5, y: 0.16, scale: 0.82 }),
 };
 
+// ---------------------------------------------------------------- text reveal
+// Text blocks animate in each time they enter the reading band and out when they leave it, in both
+// directions (styles: "text reveal"). Targets are found by structure, not by copy. JS only ever adds
+// hidden states, and only to blocks that are off screen, so nothing is lost if this never runs.
+type RvState = 'in' | 'above' | 'below' | 'before' | 'after';
+interface RvItem { el: HTMLElement; st: RvState | ''; ctl: boolean; t: number; kids: HTMLElement[] }
+const RV_GROUP = '.slide, .entry, .terms > div, .endings > div, .verdict__cols > div, .stats > div, .trace, .asi__line--3';
+const RV_DISPLAY = 'main h1, main h2, .verdict__big, .foot__name, .field__name, .asi__line--1, .asi__line--2, .asi__big';
+const RV_BODY = 'main p, main li, main h3, main h4, main dt, main dd, .chart figcaption, .hero__cue, .foot p, .foot li, .sources';
+const RV_SKIP = '.sr-only, .nav, .fields__index, .fields__skip, .slip__axis';
+const RV_TOP = NAV + 48; // blocks leave just below the nav, so the exit is seen
+const RV_BOTTOM = 0.06;
+const rvMap = new Map<Element, RvItem>();
+const rvNow = new Set<HTMLElement>();
+let rvIO: IntersectionObserver | null = null;
+let rvRaf = 0;
+let rvTimer = 0;
+
+// display type: every word becomes its own masked inline-block; one clean copy stays for assistive tech
+function splitDisplay(el: HTMLElement) {
+  if (el.dataset.rw) return el.dataset.rw === '1';
+  if (el.querySelector('a, button, input, select, textarea, [tabindex]')) { el.dataset.rw = '0'; return false; }
+  const label = (el.textContent || '').replace(/\s+/g, ' ').trim();
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walk.nextNode()) nodes.push(walk.currentNode as Text);
+  let wi = 0;
+  for (const n of nodes) {
+    const frag = document.createDocumentFragment();
+    // split on breaking spaces only, so no-break spaces keep their words on one line
+    n.data.split(/([ \t\n\r\f]+)/).forEach((part) => {
+      if (!part) return;
+      if (/^[ \t\n\r\f]+$/.test(part)) { frag.append(part); return; }
+      const w = document.createElement('span');
+      w.className = 'rw';
+      w.setAttribute('aria-hidden', 'true');
+      w.style.setProperty('--wi', String(Math.min(wi++, 18)));
+      w.textContent = part;
+      frag.append(w);
+    });
+    n.replaceWith(frag);
+  }
+  const sr = document.createElement('span');
+  sr.className = 'sr-only';
+  sr.textContent = label;
+  el.append(sr);
+  el.dataset.rw = '1';
+  return true;
+}
+
+const rvFlushNow = () => {
+  if (rvRaf) return;
+  // two frames: the hidden state must be painted once with transitions off before they come back
+  rvRaf = requestAnimationFrame(() => { rvRaf = requestAnimationFrame(() => { rvRaf = 0; rvNow.forEach((el) => el.classList.remove('rv-now')); rvNow.clear(); }); });
+};
+function setRv(it: RvItem, st: RvState, instant = false, i = 0) {
+  if (it.st === st) return;
+  it.st = st;
+  const el = it.el;
+  if (instant) { el.classList.add('rv-now'); rvNow.add(el); el.dataset.rv = st; rvFlushNow(); return; }
+  el.style.setProperty('--rv-i', String(i));
+  el.dataset.rv = st;
+  el.classList.add('rv-busy');
+  clearTimeout(it.t);
+  it.t = window.setTimeout(() => el.classList.remove('rv-busy'), st === 'in' ? 2400 : 700);
+}
+// the pinned chapters drive their own slides and lines through this
+function rvSet(el: HTMLElement, st: RvState) {
+  const it = rvMap.get(el);
+  if (it?.ctl) setRv(it, st, !it.st);
+}
+function rvRelease(els: HTMLElement[]) {
+  for (const el of els) { const it = rvMap.get(el); if (it?.ctl) { it.ctl = false; rvIO?.observe(el); } }
+}
+
+function rvRegister() {
+  const pool = new Set<HTMLElement>();
+  $$(`${RV_GROUP}, ${RV_DISPLAY}, ${RV_BODY}`).forEach((el) => { if (!el.closest(RV_SKIP)) pool.add(el); });
+  const nestedIn = (el: HTMLElement) => { for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) if (pool.has(p)) return true; return false; };
+  const add = (el: HTMLElement, ctl: boolean) => {
+    if (rvMap.has(el)) return;
+    const it: RvItem = { el, st: '', ctl, t: 0, kids: [] };
+    if (el.matches(RV_GROUP)) {
+      el.classList.add('rv-g');
+      it.kids = [...el.children].filter((c): c is HTMLElement => c instanceof HTMLElement && !c.classList.contains('sr-only'));
+      it.kids.forEach((k, i) => {
+        k.style.setProperty('--ci', String(Math.min(i, 6)));
+        k.classList.add(k.matches(RV_DISPLAY) && splitDisplay(k) ? 'rv-d' : 'rv-c');
+      });
+    } else if (el.matches(RV_DISPLAY) && splitDisplay(el)) el.classList.add('rv-d');
+    else el.classList.add('rv-b');
+    rvMap.set(el, it);
+  };
+  for (const el of pool) {
+    if (nestedIn(el)) continue;
+    const ctl = el.matches('.pinned .slide, .pinned-asi .asi__line');
+    // a group taller than most of the screen would finish its cascade off screen: reveal its parts one by one
+    if (!ctl && el.matches(RV_GROUP) && el.offsetHeight > innerHeight * 0.75) {
+      [...el.children].forEach((c) => { if (c instanceof HTMLElement && !c.classList.contains('sr-only')) add(c, false); });
+      continue;
+    }
+    add(el, ctl);
+  }
+}
+
+function rvStateOf(r: DOMRectReadOnly, H: number, W: number, pad = 0): RvState {
+  if (r.bottom <= RV_TOP - pad) return 'above';
+  if (r.top >= H * (1 - RV_BOTTOM) + pad) return 'below';
+  if (r.right <= -pad) return 'before';
+  if (r.left >= W + pad) return 'after';
+  return 'in';
+}
+function rvObserve(entries: IntersectionObserverEntry[]) {
+  const H = innerHeight, W = innerWidth;
+  const arriving: { it: RvItem; r: DOMRectReadOnly }[] = [];
+  for (const e of entries) {
+    const it = rvMap.get(e.target);
+    if (!it || it.ctl) continue;
+    const r = e.boundingClientRect;
+    if (!it.st) {
+      // first placement: anything on screen at all stays as it is; the rest is parked off screen
+      const onScreen = r.bottom > 0 && r.top < H && r.right > 0 && r.left < W;
+      setRv(it, onScreen ? 'in' : rvStateOf(r, H, W), true);
+      continue;
+    }
+    const st = e.isIntersecting ? 'in' : rvStateOf(r, H, W);
+    if (st === 'in') arriving.push({ it, r }); else setRv(it, st);
+  }
+  // blocks arriving together cascade in reading order
+  arriving.sort((a, b) => (a.r.top - b.r.top) || (a.r.left - b.r.left)).forEach(({ it }, i) => setRv(it, 'in', false, Math.min(i, 8)));
+}
+// Settle pass once scrolling stops. Hidden blocks are offset by their own lift, so a block parked at the
+// very end of the page could otherwise never cross into the band; this also re-arms blocks that were
+// already on screen at load, so their next entry animates too.
+function rvCheck() {
+  const H = innerHeight, W = innerWidth;
+  const arriving: RvItem[] = [];
+  for (const it of rvMap.values()) {
+    if (it.ctl || !it.st) continue;
+    const r = it.el.getBoundingClientRect();
+    if (!r.width && !r.height) continue;
+    if (it.st !== 'in') { if (rvStateOf(r, H, W, 34) === 'in') arriving.push(it); }
+    else if (r.bottom <= 0 || r.top >= H || r.right <= 0 || r.left >= W) setRv(it, rvStateOf(r, H, W), true);
+  }
+  arriving.forEach((it, i) => setRv(it, 'in', false, Math.min(i, 8)));
+}
+const rvSettle = () => { clearTimeout(rvTimer); rvTimer = window.setTimeout(rvCheck, 180); };
+function rvStart() {
+  rvIO = new IntersectionObserver(rvObserve, { rootMargin: `-${RV_TOP}px 0px -${RV_BOTTOM * 100}% 0px` });
+  rvMap.forEach((it) => { if (!it.ctl) rvIO!.observe(it.el); });
+}
+// crossing a breakpoint can change which groups are too tall to cascade; rebuild the uncontrolled part
+let rvWidth = innerWidth;
+function rvRebuild() {
+  if (innerWidth === rvWidth || !rvIO) return;
+  rvWidth = innerWidth;
+  rvIO.disconnect();
+  for (const it of [...rvMap.values()]) {
+    if (it.ctl) continue;
+    clearTimeout(it.t);
+    delete it.el.dataset.rv;
+    it.el.classList.remove('rv-b', 'rv-g', 'rv-busy', 'rv-now');
+    it.el.style.removeProperty('--rv-i');
+    it.kids.forEach((k) => { k.classList.remove('rv-c'); k.style.removeProperty('--ci'); });
+    rvMap.delete(it.el);
+  }
+  rvRegister();
+  rvStart();
+}
+
 // ---------------------------------------------------------------- fields: pinned specimen morph
 const fieldsSec = $('#fields')!;
 const slides = $$('.slide', fieldsSec);
@@ -142,6 +312,7 @@ const applyFields = () => {
     });
   }
   meter?.style.setProperty('--p', String(fieldsP));
+  slides.forEach((s, i) => rvSet(s, i === active ? 'in' : i < active ? 'above' : 'below'));
   setAgent({ from: shapesOf[k], to: shapesOf[k + 1], mix, scatter: 0, dim: 1, ...place.fields() });
 };
 const jumpToSlide = (i: number, immediate = false) => {
@@ -170,6 +341,7 @@ const unpinFields = () => {
   fieldTrigger?.kill(true); fieldTrigger = null;
   fieldsSec.classList.remove('pinned');
   fieldsSec.dataset.agent = 'off';
+  rvRelease(slides);
 };
 
 // ---------------------------------------------------------------- not a god: snap
@@ -178,7 +350,7 @@ const lines = $$('.asi__line', asiSec);
 let asiP = 0;
 const applyAsi = () => {
   const i = asiP < 0.3 ? 0 : asiP < 0.64 ? 1 : 2;
-  lines.forEach((l, j) => l.classList.toggle('is-active', j === i));
+  lines.forEach((l, j) => { l.classList.toggle('is-active', j === i); rvSet(l, j === i ? 'in' : j < i ? 'above' : 'below'); });
   const base = place.asi();
   if (i === 0) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base });
   else if (i === 1) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: gsap.utils.clamp(0, 1, (asiP - 0.3) / 0.16), dim: 1, ...base });
@@ -246,12 +418,7 @@ const updateZone = () => {
   else setAgent({ dim: 0 });
 };
 
-// ---------------------------------------------------------------- chart draws on first view
-const chart = $('[data-chart]');
-if (chart && !reduced) {
-  chart.classList.add('is-armed');
-  new IntersectionObserver(([e], o) => { if (e.isIntersecting) { chart.classList.add('is-drawn'); o.disconnect(); } }, { threshold: 0.3 }).observe(chart);
-}
+// ---------------------------------------------------------------- chart: bars draw each time their row is revealed (styles: .slip li[data-rv])
 
 // ---------------------------------------------------------------- neuralese: words dissolve into numbers as you scroll
 const trace = $('[data-scramble]');
@@ -287,10 +454,19 @@ if (trace && !reduced) {
 }
 
 // ---------------------------------------------------------------- per-frame bookkeeping
-const onScroll = () => { updateNav(); updateZone(); };
+const onScroll = () => { updateNav(); updateZone(); if (rvIO) rvSettle(); };
 if (lenis) lenis.on('scroll', onScroll); else addEventListener('scroll', onScroll, { passive: true });
-addEventListener('resize', () => { lastZone = ''; onScroll(); });
+let rvResizeT = 0;
+addEventListener('resize', () => { lastZone = ''; onScroll(); clearTimeout(rvResizeT); rvResizeT = window.setTimeout(rvRebuild, 400); });
 onScroll();
+
+// start the reveal once the pinned chapters exist, so their slides are handed to the pin logic
+if (!reduced) {
+  rvRegister();
+  rvStart();
+  if (fieldTrigger) applyFields();
+  if (asiSec.classList.contains('pinned-asi')) applyAsi();
+}
 
 // ---------------------------------------------------------------- boot the particles once the page is idle
 function webgl() { try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch { return false; } }
@@ -308,6 +484,7 @@ async function boot() {
     unpinFields();
     ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
     asiSec.classList.remove('pinned-asi');
+    rvRelease(lines);
     ScrollTrigger.refresh();
   }, { once: true });
   agent.intro();
@@ -318,6 +495,7 @@ const start = () => boot().catch((e) => {
   unpinFields();
   ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
   asiSec.classList.remove('pinned-asi');
+  rvRelease(lines);
   ScrollTrigger.refresh();
   console.warn('particles unavailable; showing the reading layout', e);
 });

@@ -94,7 +94,8 @@ function splitWords(el: HTMLElement) {
 if (!reduced) {
   $$('[data-reveal]').forEach((el) => {
     const words = splitWords(el);
-    gsap.to(words, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: el, start: 'top 82%', end: 'bottom 58%', scrub: 0.6 } });
+    // lit by the time the last line reaches the lower fifth, so the closing condition is at full strength where it is read
+    gsap.to(words, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: el, start: 'top 82%', end: 'bottom 80%', scrub: 0.6 } });
   });
 }
 

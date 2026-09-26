@@ -1,6 +1,6 @@
 # AGI Readiness
 
-One agent. Almost any field. No babysitter.
+One agent for almost any field, on its own.
 
 Leul T Agonafer's definition of AGI, and a plain-language check of the [AI 2027](https://ai-2027.com) forecast against what actually happened (as of 26 September 2026).
 

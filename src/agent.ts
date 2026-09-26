@@ -189,9 +189,7 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     raf = 0;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!active) return;
-    const awake = moving && now - lastInput < IDLE_MS ? 1 : 0;
-    flow += (awake - flow) * (1 - Math.exp(-dt * 2.4));
-    if (flow < 0.002 && !awake) flow = 0;
+    flow = moving ? 1 - MathUtils.smoothstep(now - lastInput, IDLE_MS - 500, IDLE_MS) : 0;
     time += dt * flow;
     const k = opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
     const key = `${target.from}>${target.to}`;

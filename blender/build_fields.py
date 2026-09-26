@@ -225,14 +225,14 @@ flask = spin_profile(prof)
 liquid = spin_profile([(0.0, -0.55), (0.78, -0.55)])
 made.append(normalize(join([flask, liquid], "chemistry")))
 
-# ---------------------------------------------------------------- mathematics: (3,2) torus knot
+# ---------------------------------------------------------------- mathematics: trefoil, viewed across its three lobes
 pts = []
 for k in range(420):
     t = k / 420 * math.tau
-    p, q = 3, 2
-    rr = 0.62 + 0.28 * math.cos(q * t)
-    pts.append((rr * math.cos(p * t), rr * math.sin(p * t), 0.28 * math.sin(q * t) * 1.3))
-knot = join([tube_curve(pts, 0.13, cyclic=True)], "math")
+    p, q = 2, 3
+    rr = 0.64 + 0.36 * math.cos(q * t)
+    pts.append((rr * math.cos(p * t), rr * math.sin(p * t), 0.43 * math.sin(q * t)))
+knot = join([tube_curve(pts, 0.09, cyclic=True)], "math")
 knot.rotation_euler.x = math.radians(90)
 made.append(normalize(join([knot], "math")))
 
@@ -282,25 +282,28 @@ made.append(normalize(join(parts, "directing")))
 
 # ---------------------------------------------------------------- editing: film strip on an S-curve with sprocket holes
 bm = bmesh.new()
-L, W, seg = 4.2, 0.9, 120
+L, W, seg = 3.6, 1.3, 120
 def place(u, v):
     x = -L / 2 + u
-    return (x, 0.45 * math.sin(u * 1.4), v * 1.0 + 0.18 * math.cos(u * 0.9))
-hole_pitch = 0.2
+    return (x, 0.18 * math.sin(u * 1.4), v + 0.32 * math.sin((u / L - 0.5) * math.tau))
+hole_pitch = 0.36
 for k in range(seg):
     u0, u1 = k * L / seg, (k + 1) * L / seg
-    rows = [(-W / 2, -W / 2 + 0.07), (-W / 2 + 0.07, -W / 2 + 0.16), (-W / 2 + 0.16, W / 2 - 0.16), (W / 2 - 0.16, W / 2 - 0.07), (W / 2 - 0.07, W / 2)]
+    rows = [(-W / 2, -W / 2 + 0.1), (-W / 2 + 0.1, -W / 2 + 0.32), (-W / 2 + 0.32, W / 2 - 0.32), (W / 2 - 0.32, W / 2 - 0.1), (W / 2 - 0.1, W / 2)]
     for ri, (v0, v1) in enumerate(rows):
         um = (u0 + u1) / 2
         if ri in (1, 3) and (um % hole_pitch) < hole_pitch * 0.5:
             continue  # sprocket hole
-        if ri == 2 and (um % 0.7) < 0.05:
+        if ri == 2 and (um % 0.9) < 0.075:
             continue  # frame gap
         q = [bm.verts.new(place(u0, v0)), bm.verts.new(place(u1, v0)), bm.verts.new(place(u1, v1)), bm.verts.new(place(u0, v1))]
         bm.faces.new(q)
+bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 me = bpy.data.meshes.new("film"); bm.to_mesh(me); bm.free()
 film = bpy.data.objects.new("editing", me); scene.collection.objects.link(film)
 sol = film.modifiers.new("s", "SOLIDIFY"); sol.thickness = 0.03
+film.rotation_euler.y = math.radians(-12)
 made.append(normalize(join([film], "editing")))
 
 # ---------------------------------------------------------------- videography: film reel

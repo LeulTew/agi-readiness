@@ -163,7 +163,7 @@ h1, h2, h3 { text-wrap: balance; }
 .pinned .fields__meter { display: block; position: absolute; left: var(--g); right: var(--g); bottom: 2.35rem; height: 1px; background: rgba(255, 255, 255, .24); }
 .pinned .fields__meter span { position: absolute; inset: 0; background: #fff; transform-origin: left; transform: scaleX(var(--p, 0)); }
 .pinned .fields__index { display: block; position: absolute; z-index: 3; left: var(--g); right: var(--g); bottom: .5rem; height: 1.6rem; }
-.fields__index button { position: absolute; top: 0; left: calc(var(--x) * 100%); transform: translateX(-50%); min-width: 26px; height: 26px; padding: 0 .15rem; border: 0; background: none; color: #fff; font: 500 .66rem/26px var(--m); letter-spacing: .04em; opacity: .62; cursor: pointer; transition: opacity .25s; }
+.fields__index button { position: absolute; top: 0; left: calc(var(--x) * 100%); transform: translateX(-50%); min-width: 26px; height: 26px; padding: 0 .15rem; border: 0; background: none; color: #fff; font: 500 .75rem/26px var(--m); letter-spacing: .04em; opacity: .86; cursor: pointer; transition: opacity .25s; }
 .fields__index button::before { content: ''; position: absolute; left: 50%; top: -.42rem; width: 1px; height: .42rem; background: currentColor; }
 .fields__index button:hover, .fields__index button[aria-current='true'] { opacity: 1; }
 .fields__index button[aria-current='true'] { font-weight: 700; }
@@ -171,7 +171,7 @@ h1, h2, h3 { text-wrap: balance; }
   :root { --stage: clamp(14.5rem, 42svh, 23rem); }
   .pinned .slide, .pinned .slide--intro, .pinned .slide--outro { top: calc(var(--nav) + var(--stage)); bottom: auto; width: 100%; max-height: calc(100svh - var(--nav) - var(--stage) - 3.6rem); overflow-y: auto; padding-bottom: 0; transform: translateY(18px); }
   .pinned .slide.is-active, .pinned .slide--intro.is-active, .pinned .slide--outro.is-active { transform: none; }
-  .fields__index button { font-size: .6rem; }
+  .fields__index button { font-size: .75rem; }
   .field__note { font-size: .98rem; }
 }
 
@@ -184,8 +184,8 @@ h1, h2, h3 { text-wrap: balance; }
 .asi__big { max-width: 14ch; font: 820 clamp(2.4rem, 1rem + 5vw, 6rem)/.92 var(--f); font-stretch: 125%; letter-spacing: -.045em; }
 .asi__small { margin-top: 1.8rem; max-width: 46ch; color: var(--on-ink-2); font-size: var(--t-body); line-height: 1.6; font-stretch: 100%; }
 .pinned-asi .asi__pin { height: 100svh; display: block; position: relative; padding: 0; }
-.pinned-asi .asi__line { position: absolute; left: var(--g); bottom: clamp(3rem, 12vh, 7rem); width: min(100% - 2 * var(--g), 44rem); opacity: 0; visibility: hidden; transform: translateY(24px); filter: blur(6px); transition: opacity .5s var(--ease), transform .8s var(--ease), filter .6s var(--ease), visibility 0s .5s; }
-.pinned-asi .asi__line.is-active { opacity: 1; visibility: visible; transform: none; filter: none; transition: opacity .6s var(--ease) .1s, transform .9s var(--ease) .1s, filter .7s var(--ease) .1s, visibility 0s; }
+.pinned-asi .asi__line { position: absolute; left: var(--g); bottom: clamp(3rem, 12vh, 7rem); width: min(100% - 2 * var(--g), 44rem); opacity: 0; pointer-events: none; transform: translateY(24px); filter: blur(6px); transition: opacity .5s var(--ease), transform .8s var(--ease), filter .6s var(--ease); }
+.pinned-asi .asi__line.is-active { opacity: 1; pointer-events: auto; transform: none; filter: none; transition: opacity .6s var(--ease) .1s, transform .9s var(--ease) .1s, filter .7s var(--ease) .1s; }
 @media (max-width: 820px) { .pinned-asi .asi__line { top: calc(var(--nav) + var(--stage)); bottom: auto; } }
 
 /* ---------------------------------------------------------------- the story */
@@ -318,7 +318,8 @@ h1, h2, h3 { text-wrap: balance; }
 }
 @media (max-width: 720px) {
   .slip { --lab: 0px; }
-  .slip__axis { margin-top: 1.6rem; }
+  .slip__axis { position: sticky; top: var(--nav); z-index: 4; margin-top: 1.6rem; height: 3.4rem; background: var(--blue); }
+  .slip__axis .slip__now { top: .25rem; }
   .slip li { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; padding: .8rem 0 .7rem; }
   .slip__label { grid-row: 1; padding: 0; font-size: .92rem; }
   .slip__track { grid-column: 1; grid-row: 2; height: 1.8rem; }

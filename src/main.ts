@@ -10,6 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 const root = document.documentElement;
 root.classList.add('js');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canAnimate = !reduced && webgl();
 const mobile = () => innerWidth < 820;
 const $ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => [...el.querySelectorAll<T>(s)];
@@ -25,16 +26,30 @@ if (!reduced) {
 const go = (hash: string) => {
   const el = document.getElementById(hash.slice(1));
   if (!el) return;
-  if (lenis) lenis.scrollTo(el, { offset: 0, duration: 1.4 }); else el.scrollIntoView();
+  const focus = () => { el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }); };
+  if (lenis) lenis.scrollTo(el, { offset: -64, duration: 1, onComplete: focus });
+  else { el.scrollIntoView(); focus(); }
 };
+const menuButton = $<HTMLButtonElement>('[data-menu]')!;
+const closeMenu = () => { $('[data-nav]')?.classList.remove('menu-open'); menuButton.setAttribute('aria-expanded', 'false'); };
+menuButton.addEventListener('click', () => {
+  const open = menuButton.getAttribute('aria-expanded') !== 'true';
+  $('[data-nav]')?.classList.toggle('menu-open', open);
+  menuButton.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && menuButton.getAttribute('aria-expanded') === 'true') { closeMenu(); menuButton.focus(); }
+});
 document.addEventListener('click', (e) => {
   const a = (e.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');
-  if (!a || a.hash.length < 2) return;
+  if (!a || a.hash.length < 2 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
   if (a.hash.startsWith('#src-')) { const d = $<HTMLDetailsElement>('.sources'); if (d) d.open = true; requestAnimationFrame(() => ScrollTrigger.refresh()); }
   e.preventDefault();
-  history.replaceState(null, '', a.hash);
+  closeMenu();
+  history.pushState(null, '', a.hash);
   requestAnimationFrame(() => go(a.hash));
 });
+addEventListener('popstate', () => { if (location.hash) go(location.hash); });
 if (location.hash.startsWith('#src-')) { const d = $<HTMLDetailsElement>('.sources'); if (d) d.open = true; }
 
 // ---------------------------------------------------------------- nav colour follows the section under it
@@ -82,10 +97,9 @@ let agent: AgentHandle | null = null;
 const pending: Partial<AgentState> = {};
 const setAgent = (s: Partial<AgentState>) => { Object.assign(pending, s); agent?.set(s); };
 const place = {
-  hero: () => (mobile() ? { x: 0, y: 0.33, scale: 0.95 } : { x: 0.47, y: 0.1, scale: 0.92 }),
-  fields: () => (mobile() ? { x: 0, y: 0.36, scale: 0.9 } : { x: 0.42, y: 0.06, scale: 1 }),
-  asi: () => (mobile() ? { x: 0, y: 0.38, scale: 0.9 } : { x: 0.44, y: 0.08, scale: 1 }),
-  verdict: () => (mobile() ? { x: 0.35, y: 0.55, scale: 0.46 } : { x: 0.55, y: 0.18, scale: 0.72 }),
+  hero: () => (mobile() ? { x: 0, y: 0.4, scale: 1 } : { x: 0.56, y: 0.32, scale: 0.77 }),
+  fields: () => (mobile() ? { x: 0, y: 0.4, scale: 1.06 } : { x: 0.47, y: 0.13, scale: 0.96 }),
+  asi: () => (mobile() ? { x: 0, y: 0.42, scale: 0.94 } : { x: 0.5, y: 0.16, scale: 0.82 }),
 };
 
 // ---------------------------------------------------------------- fields: pinned specimen morph
@@ -94,17 +108,36 @@ const slides = $$('.slide', fieldsSec);
 const shapesOf = slides.map((s) => s.dataset.shape || 'agent');
 const meter = $('.fields__meter span', fieldsSec);
 let fieldsP = 0;
+let fieldTrigger: ScrollTrigger | null = null;
+const fieldSelect = $<HTMLSelectElement>('[data-field-select]')!;
 const applyFields = () => {
   const p = fieldsP * (slides.length - 1);
   const k = Math.min(slides.length - 2, Math.floor(p));
   const f = p - k;
   const mix = gsap.utils.clamp(0, 1, (f - 0.18) / 0.5);
   const active = f < 0.43 ? k : k + 1;
-  slides.forEach((s, i) => s.classList.toggle('is-active', i === active));
+  slides.forEach((s, i) => {
+    s.classList.toggle('is-active', i === active);
+    s.inert = fieldsSec.classList.contains('pinned') && i !== active;
+  });
+  fieldSelect.value = String(active);
   meter?.style.setProperty('--p', String(fieldsP));
-  const state = slides[active].dataset.state;
-  setAgent({ from: shapesOf[k], to: shapesOf[k + 1], mix, scatter: 0, dim: state === 'notyet' ? 0.62 : 1, ...place.fields() });
+  setAgent({ from: shapesOf[k], to: shapesOf[k + 1], mix, scatter: 0, dim: 1, ...place.fields() });
 };
+fieldSelect.addEventListener('change', () => {
+  if (!fieldTrigger) return;
+  const y = fieldTrigger.start + Number(fieldSelect.value) / (slides.length - 1) * (fieldTrigger.end - fieldTrigger.start);
+  if (lenis) lenis.scrollTo(y, { duration: 0.7 }); else scrollTo({ top: y, behavior: 'instant' });
+});
+const unpinFields = () => {
+  fieldTrigger?.kill(true); fieldTrigger = null;
+  fieldsSec.classList.remove('pinned');
+  slides.forEach((s) => { s.inert = false; });
+  fieldsSec.dataset.agent = 'off';
+};
+$('[data-read-fields]')!.addEventListener('click', () => {
+  unpinFields(); ScrollTrigger.refresh(); go('#fields');
+});
 
 // ---------------------------------------------------------------- not a god: snap
 const asiSec = $('#asi')!;
@@ -115,14 +148,14 @@ const applyAsi = () => {
   lines.forEach((l, j) => l.classList.toggle('is-active', j === i));
   const base = place.asi();
   if (i === 0) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base });
-  else if (i === 1) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 1, dim: 1, ...base });
+  else if (i === 1) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: gsap.utils.clamp(0, 1, (asiP - 0.3) / 0.16), dim: 1, ...base });
   else setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base, scale: base.scale * 0.62 });
 };
 
-if (!reduced) {
+if (canAnimate) {
   root.classList.add('pinned-on');
   fieldsSec.classList.add('pinned');
-  ScrollTrigger.create({
+  fieldTrigger = ScrollTrigger.create({
     trigger: fieldsSec, pin: $('.fields__pin', fieldsSec), start: 'top top', end: () => `+=${innerHeight * (slides.length - 1) * 0.85}`,
     scrub: true, onUpdate: (st) => { fieldsP = st.progress; applyFields(); },
     onToggle: (st) => { if (st.isActive) applyFields(); },
@@ -138,7 +171,7 @@ if (!reduced) {
 
   // reality check scrolls sideways on wide screens
   const mm = gsap.matchMedia();
-  mm.add('(min-width: 1081px)', () => {
+  mm.add('(min-width: 1081px) and (min-height: 760px)', () => {
     const check = $('#check')!;
     const track = $('.check__track', check)!;
     check.classList.add('h-scroll');
@@ -147,7 +180,17 @@ if (!reduced) {
       x: () => -dist(), ease: 'none',
       scrollTrigger: { trigger: $('.check__viewport', check), pin: check, start: () => `bottom-=${Math.min(innerHeight, check.offsetHeight)} top`, end: () => `+=${dist()}`, scrub: 0.8, invalidateOnRefresh: true },
     });
-    return () => { tween.scrollTrigger?.kill(); tween.kill(); gsap.set(track, { clearProps: 'transform' }); check.classList.remove('h-scroll'); };
+    const revealFocused = (e: FocusEvent) => {
+      const entry = (e.target as Element).closest<HTMLElement>('.entry');
+      const st = tween.scrollTrigger;
+      if (!entry || !st) return;
+      const x = Math.min(dist(), Math.max(0, entry.offsetLeft - 48));
+      if (lenis) lenis.scrollTo(st.start + x, { immediate: true }); else scrollTo(0, st.start + x);
+      // Focus also scrolls the native overflow box; GSAP already owns that axis.
+      requestAnimationFrame(() => { track.parentElement!.scrollLeft = 0; });
+    };
+    track.addEventListener('focusin', revealFocused);
+    return () => { track.removeEventListener('focusin', revealFocused); tween.scrollTrigger?.kill(); tween.kill(); gsap.set(track, { clearProps: 'transform' }); check.classList.remove('h-scroll'); };
   });
 }
 
@@ -159,12 +202,12 @@ const updateZone = () => {
   let zone = 'off';
   for (const s of agentSecs) { const r = s.getBoundingClientRect(); if (r.top <= mid && r.bottom > mid) { zone = s.dataset.agent!; break; } }
   const paperOnTop = $$('.s-paper, .foot').some((s) => { const r = s.getBoundingClientRect(); return r.top <= 0 && r.bottom >= innerHeight; });
-  agent?.setActive(!paperOnTop);
+  agent?.setActive(!paperOnTop && (zone === 'hero' || zone === 'fields' || zone === 'asi'));
   if (zone === lastZone && zone !== 'hero' && zone !== 'verdict') return;
   lastZone = zone;
   if (reduced && zone !== 'hero') { setAgent({ dim: 0 }); return; }
   if (zone === 'hero') setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero() });
-  else if (zone === 'verdict') setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 0.42, ...place.verdict() });
+  else if (zone === 'verdict') setAgent({ dim: 0 });
   else if (zone === 'fields') applyFields();
   else if (zone === 'asi') applyAsi();
   else setAgent({ dim: 0 });
@@ -184,7 +227,7 @@ if (trace && !reduced) {
     const text = el.dataset.text || el.textContent || '';
     const order = [...text].map((_, i) => i).sort(() => Math.random() - 0.5);
     const rank = new Array(text.length); order.forEach((c, r) => (rank[c] = r / text.length));
-    el.setAttribute('aria-label', text);
+    el.setAttribute('aria-hidden', 'true');
     return { el, text, rank };
   });
   const digits = '0123456789';
@@ -225,10 +268,35 @@ async function boot() {
   agent = await createAgent(canvas, { url: `${import.meta.env.BASE_URL}models/fields.glb`, reducedMotion: reduced, count: innerWidth < 820 ? 9000 : 18000 });
   agent.set({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero(), ...pending });
   root.classList.add('agent-live');
+  const motionButton = $<HTMLButtonElement>('[data-motion]')!;
+  motionButton.hidden = reduced;
+  motionButton.addEventListener('click', () => {
+    const paused = motionButton.getAttribute('aria-pressed') !== 'true';
+    motionButton.setAttribute('aria-pressed', String(paused));
+    motionButton.textContent = paused ? 'Resume motion' : 'Pause motion';
+    root.classList.toggle('ambient-paused', paused);
+    agent?.setMotion(!paused);
+  });
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    root.classList.remove('agent-live');
+    agent?.dispose(); agent = null;
+    unpinFields();
+    ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
+    asiSec.classList.remove('pinned-asi');
+    motionButton.hidden = true;
+    ScrollTrigger.refresh();
+  }, { once: true });
   agent.intro();
   lastZone = '';
   updateZone();
 }
-const start = () => boot().catch((e) => console.warn('particles unavailable', e));
+const start = () => boot().catch((e) => {
+  unpinFields();
+  ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
+  asiSec.classList.remove('pinned-asi');
+  ScrollTrigger.refresh();
+  console.warn('particles unavailable; showing the reading layout', e);
+});
 if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 900 }); else setTimeout(start, 200);
 addEventListener('load', () => ScrollTrigger.refresh());

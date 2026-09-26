@@ -13,10 +13,11 @@ const pct = (m: number) => `${((m / AXIS_MONTHS) * 100).toFixed(2)}%`;
 function fieldSlides() {
   return FIELDS.map((f, i) => `
           <li class="slide field" data-shape="${f.shape}" data-state="${f.state}">
-            <p class="field__count">${String(i + 1).padStart(2, '0')} / ${FIELDS.length}<span class="field__group">${f.group}</span></p>
             <h3 class="field__name">${esc(f.name)}</h3>
+            <p class="field__count">${String(i + 1).padStart(2, '0')} / ${FIELDS.length}<span class="field__group">${f.group}</span></p>
             <p class="field__state"><i class="st st--${f.state}" aria-hidden="true"></i>${STATE_LABEL[f.state]}</p>
             <p class="field__note">${esc(f.note)}</p>
+            ${f.refs?.length ? `<p class="field__refs">${f.refs.map((n) => `<a href="#src-${n}">[${n}]</a>`).join(' ')}</p>` : ''}
           </li>`).join('');
 }
 
@@ -34,7 +35,7 @@ function slipChart() {
     return `
             <li style="--i:${i};--s:${pct(ms.m)};--a:${pct(a)};--b:${pct(b)}">
               <span class="slip__label">${ms.label}</span>
-              <span class="slip__track" aria-hidden="true"><i class="band"></i><i class="story"></i></span>
+              <span class="slip__track" aria-hidden="true"><i class="band"></i><i class="story-point"></i></span>
               <span class="slip__dates">Story <b>${monthName(ms.m)}</b><span class="sep"> · </span><span class="slow">Slower clock <b>${range}</b></span></span>
             </li>`;
   }).join('');
@@ -51,6 +52,7 @@ function buildHtml(): Plugin {
     name: 'build-html',
     transformIndexHtml: (html) => html
       .replace('<!--FIELDS-->', fieldSlides())
+      .replace('<!--FIELD-OPTIONS-->', FIELDS.map((f, i) => `<option value="${i + 1}">${esc(f.name)}</option>`).join(''))
       .replace('<!--TALLY-->', tally())
       .replace('<!--CHART-->', slipChart()),
   };

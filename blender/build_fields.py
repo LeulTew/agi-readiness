@@ -150,7 +150,12 @@ bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=4, radius=0.42)
 made.append(normalize(join([a, active()], "agent")))
 
 # ---------------------------------------------------------------- software: </>
-made.append(normalize(join([glyph("</>", size=1.4, extrude=0.22)], "software")))
+code_strokes = [
+    [(-0.45, 0, 0.52), (-1.0, 0, 0), (-0.45, 0, -0.52)],
+    [(0.45, 0, 0.52), (1.0, 0, 0), (0.45, 0, -0.52)],
+    [(-0.2, 0, -0.68), (0.2, 0, 0.68)],
+]
+made.append(normalize(join([tube_curve(points, 0.075) for points in code_strokes], "software")))
 
 # ---------------------------------------------------------------- architecture: temple front
 parts = [cube((2.4, 1.0, 0.12), (0, 0, -0.9)), cube((2.2, 0.9, 0.12), (0, 0, -0.78)), cube((2.0, 0.8, 0.12), (0, 0, -0.66))]
@@ -172,17 +177,26 @@ made.append(normalize(join(parts, "architecture")))
 
 # ---------------------------------------------------------------- schematics: two meshing gears
 def gear(teeth, r, loc, phase=0.0, thick=0.28):
-    ps = [cyl(r, thick, loc, rot=(math.radians(90), 0, 0), verts=96)]
-    for k in range(teeth):
-        ang = phase + k * math.tau / teeth
-        tw = r * 0.34
-        c = cube((tw, thick, tw * 1.05), (loc[0] + math.cos(ang) * (r + tw * 0.4), loc[1], loc[2] + math.sin(ang) * (r + tw * 0.4)), rot=(0, -ang, 0), bevel=0.01)
-        ps.append(c)
-    ps.append(cyl(r * 0.32, thick * 1.5, loc, rot=(math.radians(90), 0, 0)))
-    return ps
+    # A continuous toothed ring keeps clean valleys and a visible axle hole.
+    n = teeth * 4
+    vertices, faces = [], []
+    for depth in (-thick / 2, thick / 2):
+        for inner in (False, True):
+            for k in range(n):
+                ang = phase + k * math.tau / n
+                radius = r * (0.27 if inner else (1.08 if k % 4 in (1, 2) else 0.87))
+                vertices.append((loc[0] + math.cos(ang) * radius, loc[1] + depth, loc[2] + math.sin(ang) * radius))
+    for k in range(n):
+        j = (k + 1) % n
+        faces.extend([(k, j, n + j, n + k), (2*n + k, 3*n + k, 3*n + j, 2*n + j),
+                      (k, 2*n + k, 2*n + j, j), (n + k, n + j, 3*n + j, 3*n + k)])
+    me = bpy.data.meshes.new("gear")
+    me.from_pydata(vertices, [], faces); me.update()
+    o = bpy.data.objects.new("gear", me); scene.collection.objects.link(o)
+    return [o]
 
 
-made.append(normalize(join(gear(18, 0.8, (-0.45, 0, 0.15)) + gear(10, 0.44, (0.86, 0, -0.42), phase=0.3), "schematics")))
+made.append(normalize(join(gear(14, 0.8, (-0.45, 0, 0.15)) + gear(8, 0.44, (0.75, 0, -0.3), phase=0.22), "schematics")))
 
 # ---------------------------------------------------------------- bioengineering: DNA double helix
 parts = []
@@ -218,10 +232,19 @@ for k in range(420):
     p, q = 3, 2
     rr = 0.62 + 0.28 * math.cos(q * t)
     pts.append((rr * math.cos(p * t), rr * math.sin(p * t), 0.28 * math.sin(q * t) * 1.3))
-made.append(normalize(join([tube_curve(pts, 0.13, cyclic=True)], "math")))
+knot = join([tube_curve(pts, 0.13, cyclic=True)], "math")
+knot.rotation_euler.x = math.radians(90)
+made.append(normalize(join([knot], "math")))
 
 # ---------------------------------------------------------------- philosophy: question mark
-made.append(normalize(join([glyph("?", size=2.2, extrude=0.24, bevel=0.04)], "philosophy")))
+hook = []
+for k in range(65):
+    a = math.radians(165 - k / 64 * 245)
+    hook.append((0.48 * math.cos(a), 0, 0.52 + 0.48 * math.sin(a)))
+hook.extend([(0.04, 0, -0.12), (0.04, 0, -0.36)])
+stem = tube_curve(hook, 0.095)
+bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.12, location=(0.04, 0, -0.68))
+made.append(normalize(join([stem, active()], "philosophy")))
 
 # ---------------------------------------------------------------- photography: camera
 parts = [cube((1.9, 0.62, 1.12), (0, 0, 0), bevel=0.08), cube((0.62, 0.5, 0.34), (-0.1, 0, 0.7), bevel=0.05),

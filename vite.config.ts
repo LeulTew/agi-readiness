@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
-import { FIELDS, MILESTONES, NOW_MONTHS, AXIS_MONTHS, STORY_START } from './src/data';
+import { FIELDS, STATE_LABEL, MILESTONES, NOW_MONTHS, AXIS_MONTHS, STORY_START } from './src/data';
 
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const monthName = (m: number) => {
   const t = STORY_START.m + Math.floor(m);
@@ -8,52 +9,55 @@ const monthName = (m: number) => {
 };
 const pct = (m: number) => `${((m / AXIS_MONTHS) * 100).toFixed(2)}%`;
 
+// one slide per field; readable as a plain list without JS
+function fieldSlides() {
+  return FIELDS.map((f, i) => `
+          <li class="slide field" data-shape="${f.shape}" data-state="${f.state}">
+            <p class="field__count">${String(i + 1).padStart(2, '0')} / ${FIELDS.length}<span class="field__group">${f.group}</span></p>
+            <h3 class="field__name">${esc(f.name)}</h3>
+            <p class="field__state"><i class="st st--${f.state}" aria-hidden="true"></i>${STATE_LABEL[f.state]}</p>
+            <p class="field__note">${esc(f.note)}</p>
+          </li>`).join('');
+}
+
+function tally() {
+  const n = (s: string) => FIELDS.filter((f) => f.state === s).length;
+  return `<b>${n('human')}</b> with a human steering · <b>${n('notyet')}</b> not there yet · <b>${n('solo')}</b> on its own`;
+}
+
 // "same story, slower clock": each milestone stretched by the authors' 70–90% pace estimate
 function slipChart() {
-  const years = [2026, 2027, 2028].map((y) => {
-    const m = (y - STORY_START.y) * 12 - STORY_START.m;
-    return `<span style="left:${pct(m)}">${y}</span>`;
-  }).join('');
+  const years = [2026, 2027, 2028].map((y) => `<span style="left:${pct((y - STORY_START.y) * 12 - STORY_START.m)}">${y}</span>`).join('');
   const rows = MILESTONES.map((ms, i) => {
     const a = ms.m / 0.9, b = ms.m / 0.7;
     const range = monthName(a) === monthName(b) ? monthName(a) : `${monthName(a)} – ${monthName(b)}`;
     return `
-          <li style="--i:${i};--s:${pct(ms.m)};--a:${pct(a)};--b:${pct(b)}">
-            <span class="slip__label">${ms.label}</span>
-            <span class="slip__track" aria-hidden="true"><i class="band"></i><i class="story"></i></span>
-            <span class="slip__dates">Story: <b>${monthName(ms.m)}</b><span class="sep"> · </span><span class="slow">Slower clock: <b>${range}</b></span></span>
-          </li>`;
+            <li style="--i:${i};--s:${pct(ms.m)};--a:${pct(a)};--b:${pct(b)}">
+              <span class="slip__label">${ms.label}</span>
+              <span class="slip__track" aria-hidden="true"><i class="band"></i><i class="story"></i></span>
+              <span class="slip__dates">Story <b>${monthName(ms.m)}</b><span class="sep"> · </span><span class="slow">Slower clock <b>${range}</b></span></span>
+            </li>`;
   }).join('');
   return `
-        <div class="slip" style="--nowf:${(NOW_MONTHS / AXIS_MONTHS).toFixed(4)}" data-chart>
-          <div class="slip__axis" aria-hidden="true"><span class="slip__now" style="left:${pct(NOW_MONTHS)}">Today</span>${years}</div>
-          <ol>${rows}
-          </ol>
-        </div>`;
+          <div class="slip" style="--nowf:${(NOW_MONTHS / AXIS_MONTHS).toFixed(4)}" data-chart>
+            <div class="slip__axis" aria-hidden="true"><span class="slip__now" style="left:${pct(NOW_MONTHS)}">Today</span>${years}</div>
+            <ol>${rows}
+            </ol>
+          </div>`;
 }
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const STATE_WORD: Record<string, string> = { amber: 'With a human steering', off: 'Not yet', go: 'On its own' };
-const CHIP: Record<string, string> = { amber: 'amber', off: 'pending', go: 'go' };
-
-// renders the HTML twin of the 3D lamp matrix from the same data, so it works without JS
-function fieldList(): Plugin {
-  const group = (g: 'stem' | 'arts') => FIELDS.filter((f) => f.group === g).map((f) => `
-          <li><details>
-            <summary><span>${esc(f.label)}</span><span class="chip chip--${CHIP[f.state]}" title="${STATE_WORD[f.state]}"><i></i><span class="sr-only">${STATE_WORD[f.state]}</span></span></summary>
-            <p>${esc(f.note)}</p>
-          </details></li>`).join('');
+function buildHtml(): Plugin {
   return {
-    name: 'field-list',
+    name: 'build-html',
     transformIndexHtml: (html) => html
-      .replace('<!--FIELDS:stem-->', group('stem'))
-      .replace('<!--FIELDS:arts-->', group('arts'))
+      .replace('<!--FIELDS-->', fieldSlides())
+      .replace('<!--TALLY-->', tally())
       .replace('<!--CHART-->', slipChart()),
   };
 }
 
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
-  plugins: [fieldList()],
+  plugins: [buildHtml()],
   build: { target: 'es2022', assetsInlineLimit: 0, chunkSizeWarningLimit: 900 },
 });

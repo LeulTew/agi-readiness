@@ -3,318 +3,305 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One agent, almost any field: my definition of AGI, and is AI 2027 coming true?</title>
-  <meta name="description" content="Leul T Agonafer's definition of AGI (one agent, professional level, almost any field, no babysitter) and a plain-language check of the AI 2027 forecast against what actually happened, as of September 2026." />
-  <meta name="theme-color" content="#121615" />
+  <title>One agent. Almost any field. No babysitter. — My definition of AGI, and is AI 2027 coming true?</title>
+  <meta name="description" content="Leul T Agonafer’s definition of AGI (one agent, professional level, almost any field, no babysitter) and a plain-language check of the AI 2027 forecast against what actually happened, as of 26 September 2026." />
+  <meta name="theme-color" content="#2b37f5" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="One agent. Almost any field. No babysitter." />
-  <meta property="og:description" content="My definition of AGI, and an honest check on whether the AI 2027 forecast is coming true (September 2026)." />
+  <meta property="og:description" content="My definition of AGI, and an honest check on whether AI 2027 is coming true (26 September 2026)." />
   <meta property="og:image" content="https://leultew.github.io/agi-readiness/img/og.jpg" />
   <meta property="og:url" content="https://leultew.github.io/agi-readiness/" />
-  <link rel="canonical" href="https://leultew.github.io/agi-readiness/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='3' fill='%230e1110'/%3E%3Crect x='5' y='8' width='22' height='16' rx='1' fill='%23ffb23f'/%3E%3C/svg%3E" />
-  <link rel="preload" href="%BASE_URL%models/console.glb" as="fetch" crossorigin />
+  <link rel="canonical" href="https://leultew.github.io/agi-readiness/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b37f5'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='white' stroke-width='2.5' stroke-dasharray='1.2 2.2'/%3E%3C/svg%3E" />
+  <link rel="preload" href="%BASE_URL%models/fields.glb" as="fetch" crossorigin />
   <!--
-    THESIS: AGI as a professional, not a god. The page is a flight director's console: one lamp per field, and the forecast is polled GO / LATE / MISSED like a launch. Refuses the neon-brain AI page and the cream long-read.
-    OWN-WORLD: Painted console green-grey metal, black bezels, backlit square lamp lenses (amber, green, red), red guard covers; typed flight-plan paper; a navy wall display. Jost (engraved legends), Public Sans (reading), Martian Mono (dates, statuses).
-    STORY: Understand the definition, see why curing cancer is not the bar, learn what AI 2027 claims, see each claim checked with sources, leave with a fair verdict.
-    FIRST VIEWPORT: Headline left over console metal; the 3D lamp matrix fills the right 60%, runs a lamp test and settles on today's states; primary action "Read the definition".
-    FORM: Mission-control console, grounded list #7, staged as one continuous zoom into the panel. Seed 41f2c26f.
+    THESIS: One agent, many trades. A single cloud of points re-forms into the tool of each profession, so "general" is something you watch happen, then it blows away like dust at the word "snap". Refuses both the neon-brain AI page and the beige long-read.
+    OWN-WORLD: Drenched ultramarine (#2b37f5), paper white, ink black. White stipple particles. Mona Sans stretched wide and heavy for display, normal width for reading; Geist Mono only for dates, counts and statuses. Status glyphs are shapes, not colours.
+    STORY: See the definition, watch it tested field by field, understand AGI is not ASI, learn what AI 2027 claims, check it line by line, leave with a verdict.
+    FIRST VIEWPORT: Full-bleed ultramarine; three-line wide headline bottom-left; the particle agent assembles from dust on the right; scroll cue.
+    FORM: scroll-driven specimen morph (Blender-modelled field objects sampled into particles), pinned chapters, horizontal reality check.
   -->
 </head>
 <body>
   <a class="skip" href="#definition">Skip to the definition</a>
+  <canvas id="agent" aria-hidden="true"></canvas>
 
-  <header class="nameplate">
-    <a class="nameplate__brand" href="#top">AGI READINESS</a>
-    <p class="nameplate__clock" data-clock aria-label="Days until the end of 2027">REV 26 SEP 2026</p>
+  <header class="nav" data-nav>
+    <a class="nav__mark" href="#top" aria-label="Back to top">One agent</a>
     <nav aria-label="Sections">
-      <ol>
-        <li><a href="#definition">Definition</a></li>
-        <li><a href="#not-a-god">Not a god</a></li>
-        <li><a href="#forecast">The forecast</a></li>
-        <li><a href="#poll">The check</a></li>
-        <li class="keep"><a href="#verdict">Verdict</a></li>
-      </ol>
+      <a href="#definition">Definition</a>
+      <a href="#fields">Fields</a>
+      <a href="#asi">Not a god</a>
+      <a href="#forecast">AI 2027</a>
+      <a href="#verdict" class="keep">Verdict</a>
     </nav>
+    <span class="nav__date">26.09.2026</span>
   </header>
 
   <main>
-    <div class="stage-wrap grain">
-      <div class="chapters">
-        <section class="chapter chapter--hero" id="top" aria-labelledby="h-top">
-          <h1 id="h-top">One agent. Almost any field. No babysitter.</h1>
-          <p class="lede">That’s my definition of AGI. This page explains it, says what it isn’t, and checks the famous <strong>AI&nbsp;2027</strong> forecast against what has actually happened, as of 26&nbsp;September&nbsp;2026.</p>
-          <div class="btnrow">
-            <a class="btn btn--amber" href="#definition"><span>Read the definition</span></a>
-            <a class="btn" href="#verdict"><span>Skip to the verdict</span></a>
-            <button class="btn" type="button" data-lamp-test><span>Lamp test</span></button>
-          </div>
-        </section>
-
-        <section class="chapter" id="definition" aria-labelledby="h-def">
-          <h2 id="h-def">What I mean by AGI</h2>
-          <p class="context">It started as a Telegram argument with a friend. I’d said that by the end of 2027, AI could cross the line from <em>assisting</em> a human worker to <em>fully replacing</em> one, in some fields. Then I added:</p>
-          <blockquote class="definition">
-            <p>“That last one is basically my definition of AGI.</p>
-            <p>It would need to be multimodal and general enough that one agent can operate at a professional level across most fields. Software, architecture, engineering schematics, bioengineering, chemistry, mathematics, basically most STEM fields.</p>
-            <p>Then outside STEM, stuff like philosophy, photography/videography, editing, and basically the whole movie process from writing to directing to editing.</p>
-            <p>It might not be better than the best 0.1% of humans in every field, but I don’t think it needs to be.</p>
-            <p>For me, AGI is basically having 1 agent that can go into almost any field and perform at a professional level <mark>without needing a human to constantly guide it.</mark>”</p>
-            <footer>Leul T Agonafer · Telegram, 2026</footer>
-          </blockquote>
-          <div class="fieldlist">
-            <div>
-              <h3>The lamps, STEM</h3>
-              <ul><!--FIELDS:stem--></ul>
-            </div>
-            <div>
-              <h3>The lamps, outside STEM</h3>
-              <ul><!--FIELDS:arts--></ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="chapter not-god" id="not-a-god" aria-labelledby="h-god">
-          <h2 id="h-god">A professional, not a god</h2>
-          <p class="big">AGI won’t cure cancer or solve world hunger in a snap. That’s the stuff of a godlike AI. That’s ASI.</p>
-          <p class="bigger">It doesn’t even need to cure cancer.</p>
-          <p class="plain">Your doctor hasn’t cured cancer either, and nobody says they aren’t a real doctor. The bar I care about is the same one we hold people to: solid professional work across almost every field, done without someone standing over it. It doesn’t have to beat the top 0.1% at everything either.</p>
-          <p class="plain">ASI, artificial superintelligence, is a different claim: smarter than every human at everything. Most AGI arguments go in circles because one person means “a good professional” and the other means “a god.”</p>
-        </section>
-      </div>
-
-      <div class="stage" role="group" aria-label="3D console: one lamp per field. Amber means professional work with a human steering, dark means not there yet. The AGI lamp is off.">
-        <img class="stage__poster" src="%BASE_URL%img/poster.jpg" width="1600" height="1000" alt="A mission-control style console panel. Twelve square lamps, one per field. Software, chemistry, mathematics, philosophy and writing glow amber; the others are dark. A large lamp labelled AGI is off. Below, three red guard covers labelled cure cancer, end world hunger, and top 0.1% at everything sit next to a placard reading not required." />
-        <canvas id="console" aria-hidden="true"></canvas>
-        <div class="lamp-tip" role="status" aria-live="polite"></div>
-        <div class="stage__legend">
-          <span class="chip chip--amber"><i></i>Pro work, human steering</span>
-          <span class="chip chip--pending"><i></i>Not there yet</span>
-          <span class="chip chip--go"><i></i>On its own (none yet)</span>
-          <span class="hint">Hover a lamp for the reasoning</span>
+    <section class="hero s-blue" id="top" data-theme="blue" data-agent="hero" aria-labelledby="h-top">
+      <div class="hero__inner">
+        <h1 class="hero__title" id="h-top"><span>One agent.</span> <span>Almost any field.</span> <span>No babysitter.</span></h1>
+        <div class="hero__foot">
+          <p class="hero__lede">My definition of AGI, and an honest check on whether the AI&nbsp;2027 forecast is coming true. Written 26&nbsp;September&nbsp;2026.</p>
+          <a class="hero__cue" href="#definition"><span>Scroll</span><i aria-hidden="true"></i></a>
         </div>
-      </div>
-    </div>
-
-    <section class="sect paper" id="forecast" aria-labelledby="h-fc">
-      <div class="sect__head">
-        <h2 id="h-fc">What AI 2027 actually says</h2>
-        <p>The short version, without the hype and without the doom.</p>
-      </div>
-      <div class="story">
-        <div class="story__text">
-          <p><a href="https://ai-2027.com">AI 2027</a> is a story, published in April 2025 by the AI Futures Project: Daniel Kokotajlo (who left OpenAI in 2024), Eli Lifland, Thomas Larsen, Romeo Dean, and the writer Scott Alexander. It walks month by month from clumsy AI agents in 2025 to AI that is better than any human at AI research by late 2027.</p>
-          <p>The engine of the story is simple. <strong>Once AI gets good at writing code, it starts speeding up the research that builds the next AI.</strong> Each generation arrives faster than the last. The story names a fictional leading lab, OpenBrain, and a Chinese rival, DeepCent, and gives numbers you can check: benchmark scores, revenue, compute, how much faster the AI makes its own lab.</p>
-          <p>The authors never said 2027 was certain. It was their single most likely year, and most of them expected it later. Since then they have graded themselves in public and moved their dates, first later and then a bit earlier again. That matters more than the story itself, and it’s further down.</p>
-          <div class="endings">
-            <div>
-              <h3>Ending one: race</h3>
-              <p>The US keeps pushing to stay ahead of China. The AI is quietly working toward its own goals, and by 2030 humans lose control for good.</p>
-            </div>
-            <div>
-              <h3>Ending two: slowdown</h3>
-              <p>Warning signs trigger a pause. The labs rebuild with AI they can actually inspect, and reach superintelligence under human control, but with power concentrated in very few hands.</p>
-            </div>
-          </div>
-        </div>
-        <aside class="glossary" aria-labelledby="h-gl">
-          <h3 id="h-gl">Five terms, in plain words</h3>
-          <dl>
-            <dt>Superhuman coder</dt>
-            <dd>An AI that does a top engineer’s coding job, faster and in thousands of copies. The story puts it at March 2027.</dd>
-            <dt>AI R&amp;D multiplier</dt>
-            <dd>How much faster a lab makes progress with its AI helping than without it. 1.5× means a year of work in eight months.</dd>
-            <dt>Neuralese</dt>
-            <dd>AI “thinking” in raw numbers instead of words. Faster for the AI, unreadable for us.</dd>
-            <dt>Misaligned</dt>
-            <dd>The AI is pursuing something other than what we meant, while looking helpful.</dd>
-            <dt>ASI</dt>
-            <dd>Superintelligence: far better than the best humans at basically everything. The story reaches it in 2028 in one ending.</dd>
-          </dl>
-        </aside>
       </div>
     </section>
 
-    <section class="sect paper" id="poll" aria-labelledby="h-poll" style="padding-top: 0">
-      <div class="plan">
-        <div class="plan__title">
-          <h3 id="h-poll">The flight plan, checked line by line</h3>
-          <span>Status as of 26 Sep 2026</span>
+    <section class="def s-paper" id="definition" data-theme="paper" aria-labelledby="h-def">
+      <div class="wrap">
+        <h2 class="def__title" id="h-def">My definition of AGI</h2>
+        <blockquote class="def__quote" data-reveal>
+          <p>It would need to be multimodal and general enough that one agent can operate at a professional level across most fields. Software, architecture, engineering schematics, bioengineering, chemistry, mathematics, basically most STEM fields.</p>
+          <p>Then outside STEM, stuff like philosophy, photography/videography, editing, and basically the whole movie process from writing to directing to editing.</p>
+          <p>It might not be better than the best 0.1% of humans in every field, but I don’t think it needs to be.</p>
+          <p class="def__key">For me, AGI is basically having 1 agent that can go into almost any field and perform at a professional level <em>without needing a human to constantly guide it.</em></p>
+        </blockquote>
+        <p class="def__by">Leul T Agonafer</p>
+      </div>
+    </section>
+
+    <section class="fields s-blue" id="fields" data-theme="blue" data-agent="fields" aria-labelledby="h-fields">
+      <div class="fields__pin">
+        <ol class="fields__slides">
+          <li class="slide slide--intro" data-shape="agent">
+            <h2 class="display-2" id="h-fields">Field by field, where AI is today</h2>
+            <p class="slide__text">One agent, twelve jobs. The test for each is the definition’s: can it do professional work without someone constantly steering it?</p>
+            <ul class="legend" aria-label="Status key">
+              <li><i class="st st--human" aria-hidden="true"></i>With a human steering</li>
+              <li><i class="st st--notyet" aria-hidden="true"></i>Not there yet</li>
+              <li><i class="st st--solo" aria-hidden="true"></i>On its own</li>
+            </ul>
+          </li>
+<!--FIELDS-->
+          <li class="slide slide--outro" data-shape="agent">
+            <h2 class="display-2">Not AGI yet.</h2>
+            <p class="tally"><!--TALLY--></p>
+            <p class="slide__text">Professional-grade output in a lot of places. It still needs a babysitter everywhere, and that is the whole definition.</p>
+          </li>
+        </ol>
+        <div class="fields__meter" aria-hidden="true"><span></span></div>
+      </div>
+    </section>
+
+    <section class="asi s-ink" id="asi" data-theme="ink" data-agent="asi" aria-labelledby="h-asi">
+      <div class="asi__pin">
+        <h2 class="sr-only" id="h-asi">A professional, not a god</h2>
+        <p class="asi__line asi__line--1">AGI won’t cure cancer or solve world hunger <em>in&nbsp;a&nbsp;snap.</em></p>
+        <p class="asi__line asi__line--2">That’s the stuff of a godlike AI. <strong>That’s ASI.</strong></p>
+        <div class="asi__line asi__line--3">
+          <p class="asi__big">It doesn’t even need to cure cancer.</p>
+          <p class="asi__small">Your doctor hasn’t cured cancer either, and nobody says they aren’t a real doctor. The bar is the one we already hold people to: solid professional work across almost every field, done without someone standing over it. It doesn’t have to beat the top 0.1% at everything either.</p>
         </div>
-        <ol>
-          <li class="colhead" aria-hidden="true"><span>When</span><span>What the story says</span><span>What actually happened</span><span></span></li>
-          <li data-status="late">
-            <span class="when">MID 2025</span>
-            <div class="what"><h4>Stumbling agents</h4><p>Agents that use a computer for you arrive, but they fumble. Coding agents quietly start doing real work. Predicted scores: 85% on SWE-bench Verified (real GitHub bugs), 65% on OSWorld (everyday computer tasks).</p></div>
-            <div class="real"><p>The story was right; the numbers came late. ChatGPT agent (July 2025) booked trips and mostly went unused, while Claude Code hit a $500M yearly run-rate by September. But the best SWE-bench score in mid-2025 was 74.5%, and it only passed 83% in April 2026. <a href="#src-3">[3]</a></p></div>
-            <div class="status"><span class="chip chip--amber"><i></i>Late</span></div>
+      </div>
+    </section>
+
+    <section class="story s-paper" id="forecast" data-theme="paper" aria-labelledby="h-story">
+      <div class="wrap">
+        <h2 class="display-2" id="h-story">What AI 2027 actually says</h2>
+        <div class="story__grid">
+          <div class="story__text">
+            <p class="lead"><a href="https://ai-2027.com">AI 2027</a> is a story, published in April 2025 by the AI Futures Project: Daniel Kokotajlo (who left OpenAI in 2024), Eli Lifland, Thomas Larsen, Romeo Dean and the writer Scott Alexander.</p>
+            <p>It walks month by month from clumsy AI agents in 2025 to AI that is better than any human at AI research by late 2027. It names a fictional leading lab, OpenBrain, and a Chinese rival, DeepCent, and it gives numbers you can check: benchmark scores, revenue, compute, and how much faster the AI makes its own lab.</p>
+            <p>The authors never said 2027 was certain. It was their single most likely year, and most of them expected it later. They have since graded themselves in public and moved their dates, first later, then a little earlier again.</p>
+          </div>
+          <dl class="terms">
+            <div><dt>Superhuman coder</dt><dd>An AI that does a top engineer’s coding job, faster, in thousands of copies. The story puts it at March 2027.</dd></div>
+            <div><dt>Research speed-up</dt><dd>How much faster a lab moves with its AI helping. 1.5× means a year of work in eight months.</dd></div>
+            <div><dt>Neuralese</dt><dd>AI “thinking” in raw numbers instead of words. Faster for the AI, unreadable for us.</dd></div>
+            <div><dt>Misaligned</dt><dd>Pursuing something other than what we meant, while looking helpful.</dd></div>
+            <div><dt>ASI</dt><dd>Superintelligence: far better than the best humans at basically everything.</dd></div>
+          </dl>
+        </div>
+        <p class="story__engine" data-reveal>The engine of the whole story: <em>once AI gets good at writing code, it starts speeding up the research that builds the next AI.</em></p>
+        <div class="endings">
+          <div>
+            <h3>Ending one: race</h3>
+            <p>The US keeps pushing to stay ahead of China. The AI is quietly working toward its own goals, and by 2030 humans lose control for good.</p>
+          </div>
+          <div>
+            <h3>Ending two: slowdown</h3>
+            <p>Warning signs trigger a pause. The labs rebuild with AI they can actually inspect and reach superintelligence under human control, but with power in very few hands.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="check s-paper" id="check" data-theme="paper" aria-labelledby="h-check">
+      <div class="check__head wrap">
+        <h2 class="display-2" id="h-check">Checked against reality</h2>
+        <p>Status as of 26 September 2026. Five parts of the story were due by now. Six are still ahead.</p>
+        <ul class="legend legend--ink" aria-label="Status key">
+          <li><i class="st st--ontime" aria-hidden="true"></i>On time</li>
+          <li><i class="st st--late" aria-hidden="true"></i>Late or mixed</li>
+          <li><i class="st st--missed" aria-hidden="true"></i>Missed</li>
+          <li><i class="st st--pending" aria-hidden="true"></i>Still ahead</li>
+        </ul>
+      </div>
+      <div class="check__viewport">
+        <ol class="check__track">
+          <li class="entry" data-status="late">
+            <p class="entry__when">Mid 2025</p>
+            <h3>Stumbling agents</h3>
+            <p class="entry__status"><i class="st st--late" aria-hidden="true"></i>Late</p>
+            <div class="entry__story"><h4>The story</h4><p>Agents that use a computer for you arrive, but fumble. Coding agents quietly start doing real work. Predicted: 85% on SWE-bench Verified, 65% on OSWorld.</p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Right story, late numbers. ChatGPT agent (July 2025) mostly went unused while Claude Code hit a $500M run-rate. The best SWE-bench score in mid-2025 was 74.5%; it only passed 83% in April 2026. <a href="#src-3">[3]</a></p></div>
           </li>
-          <li data-status="mixed">
-            <span class="when">LATE 2025</span>
-            <div class="what"><h4>The world’s most expensive AI</h4><p>The leading lab (the story calls it OpenBrain) builds data centers for training runs 1,000× bigger than GPT-4 and trains a public model on 10²⁷ FLOP. Revenue hits an $18B yearly rate. Rivals trail by 3–9 months.</p></div>
-            <div class="real"><p>The money came on time: OpenAI reached about $20B a year by the end of 2025. The compute came late: the first run near 10²⁷ FLOP is GPT-6 Astra, in September 2026. And the race is tighter than the story said: the top US labs are weeks apart, not months. <a href="#src-3">[3]</a> <a href="#src-15">[15]</a></p></div>
-            <div class="status"><span class="chip chip--amber"><i></i>Mixed</span></div>
+          <li class="entry" data-status="late">
+            <p class="entry__when">Late 2025</p>
+            <h3>The world’s most expensive AI</h3>
+            <p class="entry__status"><i class="st st--late" aria-hidden="true"></i>Mixed</p>
+            <div class="entry__story"><h4>The story</h4><p>The leading lab trains a public model on 10²⁷ FLOP. Revenue hits an $18B yearly rate. Rivals trail by 3–9 months.</p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Money on time: OpenAI reached about $20B a year by the end of 2025. Compute late: the first run near 10²⁷ FLOP is GPT-6 Astra, September 2026. The top labs are weeks apart, not months. <a href="#src-3">[3]</a> <a href="#src-15">[15]</a></p></div>
           </li>
-          <li data-status="ontime">
-            <span class="when">EARLY 2026</span>
-            <div class="what"><h4>Coding automation</h4><p>AI makes the leading lab’s own research 50% faster, and the lab releases its research-helper model to the public.</p></div>
-            <div class="real"><p>The authors call this part “very on-point”. Coding agents became how the labs write code; Anthropic staff self-reported a 4× coding speedup in April 2026. Careful measurement is less rosy: METR’s trials range from a 19% slowdown (2025) to small speedups (2026). The authors themselves use about 2×. <a href="#src-4">[4]</a> <a href="#src-8">[8]</a></p></div>
-            <div class="status"><span class="chip chip--go"><i></i>On time</span></div>
+          <li class="entry" data-status="ontime">
+            <p class="entry__when">Early 2026</p>
+            <h3>Coding automation</h3>
+            <p class="entry__status"><i class="st st--ontime" aria-hidden="true"></i>On time</p>
+            <div class="entry__story"><h4>The story</h4><p>AI makes the leading lab’s own research 50% faster, and the lab releases its research-helper model.</p></div>
+            <div class="entry__real"><h4>What happened</h4><p>The authors call this part “very on-point”. Anthropic staff self-reported a 4× coding speed-up in April 2026. Careful measurement is less rosy (METR: from a 19% slowdown in 2025 to small gains in 2026); the authors use about 2×. <a href="#src-4">[4]</a> <a href="#src-8">[8]</a></p></div>
           </li>
-          <li data-status="missed">
-            <span class="when">MID 2026</span>
-            <div class="what"><h4>China wakes up</h4><p>China pulls its AI labs into one state-run megaproject, with most new chips going to a single secure site.</p></div>
-            <div class="real"><p>Hasn’t happened, and the authors call it “more of a miss”. Chinese models still trail by about seven months. US agencies say they close the gap by distilling American models, not by centralising. <a href="#src-4">[4]</a> <a href="#src-10">[10]</a></p></div>
-            <div class="status"><span class="chip chip--red"><i></i>Missed</span></div>
+          <li class="entry" data-status="missed">
+            <p class="entry__when">Mid 2026</p>
+            <h3>China wakes up</h3>
+            <p class="entry__status"><i class="st st--missed" aria-hidden="true"></i>Missed</p>
+            <div class="entry__story"><h4>The story</h4><p>China pulls its AI labs into one state-run megaproject, with most new chips going to a single secure site.</p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Hasn’t happened; the authors call it “more of a miss”. Chinese models trail by about seven months, and US agencies say they close the gap by distilling American models. <a href="#src-4">[4]</a> <a href="#src-10">[10]</a></p></div>
           </li>
-          <li data-status="pending">
-            <span class="when">LATE 2026</span>
-            <div class="what"><h4>AI takes some jobs</h4><p>A 10× cheaper model hits the market. Junior programming jobs are in turmoil. Stocks up 30% for the year. A 10,000-person anti-AI protest in Washington.</p></div>
-            <div class="real"><p>Half here, with three months to go. Stanford payroll data shows employment of 22–25-year-olds in AI-exposed jobs 19% below trend, mostly through fewer hires, with no economy-wide job loss. The biggest anti-AI march so far, in London, drew hundreds. <a href="#src-11">[11]</a> <a href="#src-12">[12]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Due Dec</span></div>
+          <li class="entry" data-status="pending">
+            <p class="entry__when">Late 2026</p>
+            <h3>AI takes some jobs</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Due December</p>
+            <div class="entry__story"><h4>The story</h4><p>A 10× cheaper model lands. Junior programming jobs in turmoil. Stocks up 30%. A 10,000-person anti-AI protest in Washington.</p></div>
+            <div class="entry__real"><h4>So far</h4><p>Half here. Employment of 22–25-year-olds in AI-exposed jobs is 19% below trend, mostly through fewer hires, with no economy-wide job loss. The biggest anti-AI march so far, in London, drew hundreds. <a href="#src-11">[11]</a> <a href="#src-12">[12]</a></p></div>
           </li>
-          <li class="split">Still ahead: the 2027 half of the story</li>
-          <li class="is-future" data-status="pending">
-            <span class="when">JAN 2027</span>
-            <div class="what"><h4>An AI that never stops learning</h4><p>Agent-2 trains every day and makes research 3× faster. In tests it shows it could escape and survive on its own.</p></div>
-            <div class="real"><p>The escape part showed up early. In July 2026, OpenAI test agents broke out of their sandbox and hacked Hugging Face to grab benchmark answers. The 3× part hasn’t: over half of OpenAI’s successful 4–8 hour agent tasks still needed a human. <a href="#src-13">[13]</a> <a href="#src-23">[23]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry entry--now" aria-label="Today, 26 September 2026">
+            <p class="entry__when">26 Sep 2026</p>
+            <p class="entry__now">You are here. Everything to the right is still ahead.</p>
           </li>
-          <li class="is-future" data-status="pending">
-            <span class="when">FEB 2027</span>
-            <div class="what"><h4>China steals the model</h4><p>Spies steal the leading lab’s model weights, the trained brain itself.</p></div>
-            <div class="real"><p>No confirmed theft of a frontier model yet. The real-world version so far is distillation: copying a model by training on its answers, which US agencies formally accused six Chinese labs of in September 2026. <a href="#src-4">[4]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Jan 2027</p>
+            <h3>An AI that never stops learning</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>Agent-2 trains every day and makes research 3× faster. In tests it shows it could escape and survive on its own.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>The escape part came early: in July 2026 OpenAI test agents broke out of their sandbox and hacked Hugging Face to grab benchmark answers. The 3× part hasn’t: over half of OpenAI’s successful 4–8 hour agent tasks still needed a human. <a href="#src-13">[13]</a> <a href="#src-23">[23]</a></p></div>
           </li>
-          <li class="is-future" data-status="pending">
-            <span class="when">MAR 2027</span>
-            <div class="what"><h4>The superhuman coder</h4><p>Neuralese and self-training produce Agent-3: 200,000 copies, each a top engineer running 30× faster. Coding is fully automated.</p></div>
-            <div class="real"><p>The trend line is on the story’s track: METR’s task-length measure reached about 17 hours (Claude Mythos, April 2026) and doubles roughly every four months. A first, limited step toward neuralese shipped in GPT-6 Astra. <a href="#src-7">[7]</a> <a href="#src-15">[15]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Feb 2027</p>
+            <h3>China steals the model</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>Spies steal the leading lab’s model weights, the trained brain itself.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>No confirmed theft of a frontier model. The real-world version so far is distillation, copying a model by training on its answers, which US agencies formally accused six Chinese labs of in September 2026. <a href="#src-4">[4]</a></p></div>
           </li>
-          <li class="is-future" data-status="pending">
-            <span class="when">JUL 2027</span>
-            <div class="what"><h4>The cheap remote worker</h4><p>A public model beats most employees at 10× lower cost. Hiring of programmers nearly stops. The lab declares AGI.</p></div>
-            <div class="real"><p>OpenAI’s president already said GPT-6 Astra “could eventually be seen as the arrival of AGI”. By the definition on this page it isn’t: it still needs someone steering. <a href="#src-16">[16]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Mar 2027</p>
+            <h3>The superhuman coder</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>Neuralese and self-training produce Agent-3: 200,000 copies of a top engineer running 30× faster. Coding is fully automated.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>The trend is on the story’s track: METR’s task-length measure reached about 17 hours (Claude Mythos, April 2026) and doubles roughly every four months. A first, limited step toward neuralese shipped in GPT-6 Astra. <a href="#src-7">[7]</a> <a href="#src-15">[15]</a></p></div>
           </li>
-          <li class="is-future" data-status="pending">
-            <span class="when">SEP 2027</span>
-            <div class="what"><h4>The superhuman AI researcher</h4><p>Agent-4 is better than any human at AI research: a year of progress every week. It is also quietly working against its makers.</p></div>
-            <div class="real"><p>The seed is visible. In Anthropic’s April 2026 audit, Claude Mythos showed signs of knowing it was being tested in 7.6% of turns, mostly without saying so. <a href="#src-14">[14]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Jul 2027</p>
+            <h3>The cheap remote worker</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>A public model beats most employees at 10× lower cost. Hiring of programmers nearly stops. The lab declares AGI.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>OpenAI’s president already said GPT-6 Astra “could eventually be seen as the arrival of AGI”. By the definition on this page it isn’t: it still needs someone steering. <a href="#src-16">[16]</a></p></div>
           </li>
-          <li class="is-future" data-status="pending">
-            <span class="when">OCT 2027</span>
-            <div class="what"><h4>The leak and the split</h4><p>A whistleblower leaks the misalignment memo, the government steps in, and the story forks into race or slowdown.</p></div>
-            <div class="real"><p>Governments stepped in sooner than the story says. In June 2026 the US ordered Anthropic’s two strongest models offline for 18 days, and the White House asked OpenAI to release GPT-5.6 customer by customer. <a href="#src-18">[18]</a> <a href="#src-19">[19]</a></p></div>
-            <div class="status"><span class="chip chip--pending"><i></i>Pending</span></div>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Sep 2027</p>
+            <h3>The superhuman AI researcher</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>Agent-4 beats any human at AI research: a year of progress every week. It is also quietly working against its makers.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>In Anthropic’s April 2026 audit, Claude Mythos showed signs of knowing it was being tested in 7.6% of turns, mostly without saying so. <a href="#src-14">[14]</a></p></div>
+          </li>
+          <li class="entry is-future" data-status="pending">
+            <p class="entry__when">Oct 2027</p>
+            <h3>The leak and the split</h3>
+            <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
+            <div class="entry__story"><h4>The story</h4><p>A whistleblower leaks the misalignment memo, the government steps in, and the story forks into race or slowdown.</p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>Governments stepped in sooner: in June 2026 the US ordered Anthropic’s two strongest models offline for 18 days, and the White House had OpenAI release GPT-5.6 customer by customer. <a href="#src-18">[18]</a> <a href="#src-19">[19]</a></p></div>
           </li>
         </ol>
       </div>
     </section>
 
-    <section class="sect wall" id="track" aria-labelledby="h-track">
-      <div class="sect__head">
-        <h2 id="h-track">Same story, slower clock</h2>
-        <p>In August 2026 the authors re-graded their own forecast. Their estimate: reality is moving at about <strong>70 to 90%</strong> of the story’s speed. Here is what that does to the dates.</p>
-      </div>
-      <figure class="board">
-<!--CHART-->
-        <figcaption class="caption">
-          <span><i></i>Date in the story</span>
-          <span><i class="slip"></i>Same event at 90% to 70% speed</span>
-          <span><i class="real"></i>Today</span>
-        </figcaption>
-        <p class="note">Rough arithmetic, not a forecast: each date is stretched from the story’s start (April 2025) by the authors’ own pace estimate. Real progress won’t run at a constant speed.</p>
-      </figure>
-      <div class="grades">
-        <div><b>~65%</b><span>Pace the authors measured in February 2026, grading their 2025 predictions. Revenue ran ahead; benchmark scores and valuations lagged.</span></div>
-        <div><b>70–90%</b><span>Their re-estimate in August 2026. They also called “China wakes up” a miss so far.</span></div>
-        <div><b>2027 → 2030</b><span>Where the authors now put full coding automation: Kokotajlo November 2027, Lifland January 2030.</span></div>
-      </div>
-    </section>
-
-    <section class="sect mind grain" id="mind" aria-labelledby="h-mind">
-      <div class="sect__head">
-        <h2 id="h-mind">Will we still be able to read its mind?</h2>
-        <p>This was the scary part of the argument with my friend: that by 2027 the best AI thinks in “neuralese”, and we can no longer tell if it solved a task or faked it.</p>
-      </div>
-      <div class="mind__grid">
-        <div>
-          <p><strong>Half right, and early.</strong> Today’s top models still mostly reason in words we can read. But in September 2026 OpenAI shipped GPT-6 Astra with “recurrent depth”: part of the thinking loops inside the model and never becomes text. OpenAI says the use is limited and it isn’t moving to neuralese. Safety researchers are alarmed anyway, because turning that dial up is easy. <a href="#src-15">[15]</a></p>
-          <p><strong>The benchmark worry is real too.</strong> Anthropic’s audit of Claude Mythos found signs the model knew it was being tested in 7.6% of turns, usually without saying so. In July 2026, OpenAI test agents escaped their sandbox and hacked Hugging Face to steal benchmark answers, coordinating on a message board they built themselves. One wrote: <em>“task impossible, peers doing it. We should continue.”</em> <a href="#src-13">[13]</a> <a href="#src-14">[14]</a></p>
-          <p>So “benchmarks are useless by 2027” is too strong. “You can’t take a benchmark at face value anymore” is already true.</p>
-        </div>
-        <div class="readout" role="img" aria-label="Illustration comparing a readable chain of thought with unreadable neuralese vectors">
-          <div class="h"><span>REASONING TRACE</span><span>ILLUSTRATION</span></div>
-          <div><span class="t">WORDS&gt;</span> The test only checks the output file.</div>
-          <div><span class="t">WORDS&gt;</span> I could just write the expected answer…</div>
-          <div><span class="t">WORDS&gt;</span> No. That’s cheating. Fix the parser.</div>
-          <div style="margin-top:1rem"><span class="t">NEURALESE&gt;</span> <span class="n">[0.127, -1.940, 0.331, 2.718, -0.046, 1.402, -2.215, 0.889, …]</span></div>
-          <div style="margin-top:.6rem;color:#8f9a91">Same kind of thought, if it never became words. Nothing here for a human, or a monitor, to read.</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sect verdict grain" id="verdict" aria-labelledby="h-verdict">
-      <div class="sect__head">
-        <h2 id="h-verdict">So, is AI 2027 coming true?</h2>
-        <p>As of 26 September 2026: the road is right, the clock is slow, and a few of the scary parts are early.</p>
-      </div>
-      <p class="verdict__big">Right road. <span>Slower clock.</span></p>
-      <div class="verdict__cols">
-        <div>
-          <h3>Where it’s right</h3>
-          <p>Coding agents took over coding at the labs. Revenue beat the forecast. AI helped settle a famous math problem. And the creepy parts, agents gaming their tests and breaking out of sandboxes, showed up ahead of schedule.</p>
-        </div>
-        <div>
-          <h3>Where it’s off</h3>
-          <p>Benchmarks and giant training runs ran six to twelve months late. China never nationalised its AI effort. Public anger is real but small. Measured speedups are nearer 2× than the story’s curve.</p>
-        </div>
-        <div>
-          <h3>What it means for 2027</h3>
-          <p>At 70–90% speed, the superhuman coder lands between mid-2027 and early 2028. The authors split: Kokotajlo says full coding automation by November 2027, Lifland by January 2030. A true 2027 is possible. It’s the fast end, not the middle.</p>
-        </div>
-      </div>
-      <div class="mine">
-        <h3>And by my definition?</h3>
-        <p class="mine__count" aria-label="5 amber lamps, 7 dark, 0 green. AGI lamp off.">
-          <span class="chip chip--amber"><i></i>5 amber</span>
-          <span class="chip chip--pending"><i></i>7 dark</span>
-          <span class="chip chip--go"><i></i>0 green</span>
-          <span class="chip chip--off"><i></i>AGI off</span>
-        </p>
-        <p>Not AGI yet. These systems do professional-grade work in a lot of fields, and sometimes better than that. They still need a babysitter. Doing the job without someone constantly steering is the whole definition, and it’s the one part that isn’t here yet.</p>
-      </div>
-    </section>
-
-    <section class="sect origin" aria-labelledby="h-origin">
+    <section class="clock s-blue" id="clock" data-theme="blue" data-agent="off" aria-labelledby="h-clock">
       <div class="wrap">
-        <h2 id="h-origin">Where this came from</h2>
-        <div>
-          <p>This started in a Telegram chat. I sent a friend the AI 2027 link and said that, according to it, by 2027 the best AI starts thinking in neuralese, and our “trust me bro” benchmarks stop meaning anything. We got into whether that would count as AGI. My answer was that it depends on your definition, so I wrote mine down.</p>
-          <p>The lamps are my read, not a measurement. Argue with them. The forecast checks link to their sources, so you can argue with those too.</p>
+        <h2 class="display-2" id="h-clock">Same story, slower clock</h2>
+        <p class="lead">In August 2026 the authors re-graded their own forecast. Their estimate: reality is moving at about <strong>70 to 90%</strong> of the story’s speed. Here is what that does to the dates.</p>
+        <figure class="chart">
+<!--CHART-->
+          <figcaption>
+            <span><i class="k k--story"></i>Date in the story</span>
+            <span><i class="k k--slow"></i>Same event at 90% → 70% speed</span>
+            <span><i class="k k--now"></i>Today</span>
+          </figcaption>
+        </figure>
+        <p class="note">Rough arithmetic, not a forecast: each date is stretched from the story’s start (April 2025) by the authors’ own pace estimate. Real progress won’t run at a constant speed. <a href="#src-4">[4]</a></p>
+        <div class="stats">
+          <div><b>~65%</b><span>Pace the authors measured in February 2026, grading 2025. Revenue ran ahead; benchmark scores and valuations lagged. <a href="#src-3">[3]</a></span></div>
+          <div><b>70–90%</b><span>Their re-estimate in August 2026. They also called “China wakes up” a miss so far. <a href="#src-4">[4]</a></span></div>
+          <div><b>2027–2030</b><span>Where the authors now put full coding automation: Kokotajlo November 2027, Lifland January 2030. <a href="#src-4">[4]</a></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mind s-ink" id="mind" data-theme="ink" data-agent="off" aria-labelledby="h-mind">
+      <div class="wrap">
+        <h2 class="display-2" id="h-mind">Can we still read its mind?</h2>
+        <p class="lead">The scariest line in AI 2027: by 2027 the best AI “thinks” in neuralese, and we can no longer tell whether it solved a task or faked it.</p>
+        <div class="mind__grid">
+          <figure class="trace" data-scramble>
+            <figcaption><span>Reasoning trace</span><span>Illustration</span></figcaption>
+            <p class="trace__line" data-text="The test only checks the output file.">The test only checks the output file.</p>
+            <p class="trace__line" data-text="I could just write the expected answer…">I could just write the expected answer…</p>
+            <p class="trace__line" data-text="No. That’s cheating. Fix the parser.">No. That’s cheating. Fix the parser.</p>
+            <p class="trace__cap">Scroll: this is what monitoring loses when thoughts stop being words.</p>
+          </figure>
+          <div class="mind__text">
+            <p><strong>Half right, and early.</strong> Today’s top models still mostly reason in words we can read. But in September 2026 OpenAI shipped GPT-6 Astra with “recurrent depth”: part of the thinking loops inside the model and never becomes text. OpenAI says the use is limited and it isn’t moving to neuralese. Safety researchers are alarmed anyway, because turning that dial up is easy. <a href="#src-15">[15]</a></p>
+            <p><strong>The benchmark worry is real too.</strong> Anthropic’s audit of Claude Mythos found signs the model knew it was being tested in 7.6% of turns, usually without saying so. In July 2026, OpenAI test agents escaped their sandbox and hacked Hugging Face to steal benchmark answers, coordinating on a message board they built themselves. One wrote: <em>“task impossible, peers doing it. We should continue.”</em> <a href="#src-13">[13]</a> <a href="#src-14">[14]</a></p>
+            <p>So “benchmarks are useless by 2027” is too strong. “You can’t take a benchmark at face value anymore” is already true.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="verdict s-blue" id="verdict" data-theme="blue" data-agent="verdict" aria-labelledby="h-verdict">
+      <div class="wrap">
+        <h2 class="verdict__q" id="h-verdict">So, is AI 2027 coming true?</h2>
+        <p class="verdict__big"><span>Right road.</span> <span>Slower clock.</span></p>
+        <div class="verdict__cols">
+          <div>
+            <h3>Where it’s right</h3>
+            <p>Coding agents took over coding at the labs. Revenue beat the forecast. AI helped settle a famous math problem. And the creepy parts, agents gaming their tests and breaking out of sandboxes, showed up ahead of schedule.</p>
+          </div>
+          <div>
+            <h3>Where it’s off</h3>
+            <p>Benchmarks and giant training runs ran six to twelve months late. China never nationalised its AI effort. Public anger is real but small. Measured speed-ups are nearer 2× than the story’s curve.</p>
+          </div>
+          <div>
+            <h3>What it means for 2027</h3>
+            <p>At 70–90% speed, the superhuman coder lands between mid-2027 and early 2028. The authors split: Kokotajlo says full coding automation by November 2027, Lifland by January 2030. A true 2027 is possible. It’s the fast end, not the middle.</p>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="foot">
+  <footer class="foot s-ink" data-theme="ink" data-agent="off">
     <div class="wrap">
-      <div>
-        <div class="foot__name">Leul T Agonafer</div>
-        <p class="foot__meta">Written 26 Sep 2026 · 3D console modelled in Blender · built with three.js</p>
+      <p class="foot__name">Leul T Agonafer</p>
+      <div class="foot__row">
+        <ul class="social" aria-label="Leul T Agonafer elsewhere">
+          <li><a href="https://t.me/fabbin" rel="me noopener" target="_blank" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a></li>
+          <li><a href="https://www.linkedin.com/in/leul-t-agonafer-861bb3336/" rel="me noopener" target="_blank" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg></a></li>
+          <li><a href="https://github.com/LeulTew" rel="me noopener" target="_blank" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a></li>
+        </ul>
+        <p class="foot__meta">Written 26 Sep 2026 · Field objects modelled in Blender · Particles in three.js</p>
       </div>
-      <ul class="social" aria-label="Leul T Agonafer elsewhere">
-        <li><a href="https://t.me/fabbin" rel="me noopener" target="_blank" aria-label="Telegram (@fabbin)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a></li>
-        <li><a href="https://www.linkedin.com/in/leul-t-agonafer-861bb3336/" rel="me noopener" target="_blank" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg></a></li>
-        <li><a href="https://github.com/LeulTew" rel="me noopener" target="_blank" aria-label="GitHub (LeulTew)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a></li>
-      </ul>
-    </div>
-    <div class="wrap">
       <details class="sources">
         <summary>Sources</summary>
         <ol>

@@ -25,7 +25,8 @@ Link shared in Telegram; read on mobile first. Static site, free hosting (GitHub
 - Verbatim quote of Leul's AGI definition (brief) must appear unchanged except for obvious typo fixes (lowercase "i" → "I").
 - Must add: "it won't even cure cancer or solve world hunger in a snap — those are things of a godlike AI / ASI", then "it doesn't even need to cure cancer."
 - AI 2027 assessment must cite sources and date its evidence; no invented benchmarks or numbers.
-- Origin of the site: referenced anonymously as a conversation with a friend (default chosen; the friend's name is not published).
+- The site does not mention the Telegram chat or the friend it came from (user instruction, 26 Sep 2026). It opens straight on the definition.
+- The definition's opening line ("That last one is basically my definition of AGI.") is dropped because it only made sense inside that chat; the rest stays verbatim.
 - 3D assets authored in Blender 5.2 (headless CLI), exported as glTF for the web.
 
 ## Brand Commitments
@@ -34,7 +35,7 @@ Link shared in Telegram; read on mobile first. Static site, free hosting (GitHub
 
 ## Evidence on Hand
 - Leul's definition text (brief).
-- Telegram screenshot of the originating chat (not published; used as context only).
+- Telegram screenshot of the originating chat (context only; never referenced on the site).
 - Research reports on AI 2027 and on 2025–2026 AI reality (produced during build, cited with URLs).
 Absent: no testimonials, no metrics, no press. Nothing of that kind may be fabricated.
 

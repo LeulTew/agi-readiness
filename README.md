@@ -6,5 +6,5 @@ Leul T Agonafer's definition of AGI, and a plain-language check of the [AI 2027]
 
 Live: https://leultew.github.io/agi-readiness/
 
-- `blender/build_console.py` builds the 3D console in Blender 5.2 (headless) and exports `public/models/console.glb` plus the poster renders.
+- `blender/build_fields.py` models the twelve field objects (plus the neutral agent) in Blender 5.2 headless and exports `public/models/fields.glb`; the site samples them into particles.
 - `npm run dev` / `npm run build` (set `BASE_PATH=/agi-readiness/` for Pages).

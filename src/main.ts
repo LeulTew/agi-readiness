@@ -27,8 +27,14 @@ const go = (hash: string) => {
   const el = document.getElementById(hash.slice(1));
   if (!el) return;
   const focus = () => { el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }); };
-  if (lenis) lenis.scrollTo(el, { offset: -64, duration: 1, onComplete: focus });
-  else { el.scrollIntoView(); focus(); }
+  // Sections land flush with the top so pinned chapters start exactly at their first frame
+  // (their own padding clears the nav); smaller targets such as sources clear the 64px nav.
+  // A numeric target also stops Lenis adding scroll-padding-top on top of this offset.
+  const y = el.getBoundingClientRect().top + scrollY - (el.tagName === 'SECTION' ? 0 : 80);
+  // opening the sources drawer grows the page; refresh Lenis' cached scroll limit first
+  lenis?.resize();
+  if (lenis) lenis.scrollTo(Math.max(0, y), { duration: 1, onComplete: focus });
+  else { scrollTo({ top: Math.max(0, y), behavior: 'instant' }); focus(); }
 };
 const menuButton = $<HTMLButtonElement>('[data-menu]')!;
 const closeMenu = () => { $('[data-nav]')?.classList.remove('menu-open'); menuButton.setAttribute('aria-expanded', 'false'); };

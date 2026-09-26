@@ -11,7 +11,7 @@ const root = document.documentElement;
 root.classList.add('js');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canAnimate = !reduced && webgl();
-const mobile = () => innerWidth < 820;
+const mobile = () => innerWidth <= 820;
 const $ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => el.querySelector<T>(s);
 const $$ = <T extends Element = HTMLElement>(s: string, el: ParentNode = document) => [...el.querySelectorAll<T>(s)];
 
@@ -96,10 +96,19 @@ if (!reduced) {
 let agent: AgentHandle | null = null;
 const pending: Partial<AgentState> = {};
 const setAgent = (s: Partial<AgentState>) => { Object.assign(pending, s); agent?.set(s); };
+const NAV = 64;
+// On phones the object sits centred in the band between the nav and the text block,
+// so every slide keeps the same object-to-text rhythm whatever the text length.
+const band = (el: HTMLElement | undefined, max: number) => {
+  const top = el?.offsetTop || innerHeight * 0.5;
+  const room = Math.max(140, top - NAV);
+  const scale = Math.min(max, (room - 24) / (0.62 * Math.min(innerWidth, innerHeight)));
+  return { x: 0, y: 1 - (2 * (NAV + room / 2)) / innerHeight, scale };
+};
 const place = {
   hero: () => (mobile() ? { x: 0, y: 0.4, scale: 1 } : { x: 0.56, y: 0.32, scale: 0.77 }),
-  fields: () => (mobile() ? { x: 0, y: 0.4, scale: 1.06 } : { x: 0.47, y: 0.13, scale: 0.96 }),
-  asi: () => (mobile() ? { x: 0, y: 0.42, scale: 0.94 } : { x: 0.5, y: 0.16, scale: 0.82 }),
+  fields: () => (mobile() ? band(slides[1], 1.06) : { x: 0.47, y: 0.13, scale: 0.96 }),
+  asi: () => (mobile() ? band(lines[0], 0.94) : { x: 0.5, y: 0.16, scale: 0.82 }),
 };
 
 // ---------------------------------------------------------------- fields: pinned specimen morph
@@ -107,37 +116,55 @@ const fieldsSec = $('#fields')!;
 const slides = $$('.slide', fieldsSec);
 const shapesOf = slides.map((s) => s.dataset.shape || 'agent');
 const meter = $('.fields__meter span', fieldsSec);
+const ticks = $$<HTMLButtonElement>('.fields__index button', fieldsSec);
 let fieldsP = 0;
 let fieldTrigger: ScrollTrigger | null = null;
-const fieldSelect = $<HTMLSelectElement>('[data-field-select]')!;
+let activeSlide = -1;
 const applyFields = () => {
   const p = fieldsP * (slides.length - 1);
   const k = Math.min(slides.length - 2, Math.floor(p));
   const f = p - k;
   const mix = gsap.utils.clamp(0, 1, (f - 0.18) / 0.5);
   const active = f < 0.43 ? k : k + 1;
-  slides.forEach((s, i) => {
-    s.classList.toggle('is-active', i === active);
-    s.inert = fieldsSec.classList.contains('pinned') && i !== active;
-  });
-  fieldSelect.value = String(active);
+  if (active !== activeSlide) {
+    activeSlide = active;
+    slides.forEach((s, i) => s.classList.toggle('is-active', i === active));
+    const roving = gsap.utils.clamp(1, ticks.length, active) - 1;
+    ticks.forEach((b, i) => {
+      b.tabIndex = i === roving ? 0 : -1;
+      if (i + 1 === active) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+    });
+  }
   meter?.style.setProperty('--p', String(fieldsP));
   setAgent({ from: shapesOf[k], to: shapesOf[k + 1], mix, scatter: 0, dim: 1, ...place.fields() });
 };
-fieldSelect.addEventListener('change', () => {
+const jumpToSlide = (i: number, immediate = false) => {
   if (!fieldTrigger) return;
-  const y = fieldTrigger.start + Number(fieldSelect.value) / (slides.length - 1) * (fieldTrigger.end - fieldTrigger.start);
-  if (lenis) lenis.scrollTo(y, { duration: 0.7 }); else scrollTo({ top: y, behavior: 'instant' });
+  const y = fieldTrigger.start + (i / (slides.length - 1)) * (fieldTrigger.end - fieldTrigger.start);
+  if (lenis) lenis.scrollTo(y, { duration: 0.9, immediate }); else scrollTo({ top: y, behavior: 'instant' });
+};
+// the index is one tab stop; arrows move along it and bring that field up
+ticks.forEach((b) => b.addEventListener('click', () => jumpToSlide(Number(b.dataset.go))));
+$('.fields__index', fieldsSec)?.addEventListener('keydown', (e) => {
+  const i = ticks.indexOf(document.activeElement as HTMLButtonElement);
+  const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[e.key];
+  const to = e.key === 'Home' ? 0 : e.key === 'End' ? ticks.length - 1 : step !== undefined ? gsap.utils.clamp(0, ticks.length - 1, i + step) : -1;
+  if (i < 0 || to < 0) return;
+  e.preventDefault();
+  ticks.forEach((b, n) => (b.tabIndex = n === to ? 0 : -1));
+  ticks[to].focus();
+  jumpToSlide(Number(ticks[to].dataset.go));
+});
+// hidden slides stay in the accessibility tree; focusing into one brings it on screen
+fieldsSec.addEventListener('focusin', (e) => {
+  const slide = (e.target as Element).closest<HTMLElement>('.slide');
+  if (slide && fieldTrigger) jumpToSlide(slides.indexOf(slide), true);
 });
 const unpinFields = () => {
   fieldTrigger?.kill(true); fieldTrigger = null;
   fieldsSec.classList.remove('pinned');
-  slides.forEach((s) => { s.inert = false; });
   fieldsSec.dataset.agent = 'off';
 };
-$('[data-read-fields]')!.addEventListener('click', () => {
-  unpinFields(); ScrollTrigger.refresh(); go('#fields');
-});
 
 // ---------------------------------------------------------------- not a god: snap
 const asiSec = $('#asi')!;
@@ -178,7 +205,7 @@ if (canAnimate) {
     const dist = () => Math.max(0, track.scrollWidth - innerWidth);
     const tween = gsap.to(track, {
       x: () => -dist(), ease: 'none',
-      scrollTrigger: { trigger: $('.check__viewport', check), pin: check, start: () => `bottom-=${Math.min(innerHeight, check.offsetHeight)} top`, end: () => `+=${dist()}`, scrub: 0.8, invalidateOnRefresh: true },
+      scrollTrigger: { trigger: check, pin: check, start: 'top top', end: () => `+=${dist()}`, scrub: 0.8, invalidateOnRefresh: true },
     });
     const revealFocused = (e: FocusEvent) => {
       const entry = (e.target as Element).closest<HTMLElement>('.entry');
@@ -268,15 +295,6 @@ async function boot() {
   agent = await createAgent(canvas, { url: `${import.meta.env.BASE_URL}models/fields.glb`, reducedMotion: reduced, count: innerWidth < 820 ? 9000 : 18000 });
   agent.set({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero(), ...pending });
   root.classList.add('agent-live');
-  const motionButton = $<HTMLButtonElement>('[data-motion]')!;
-  motionButton.hidden = reduced;
-  motionButton.addEventListener('click', () => {
-    const paused = motionButton.getAttribute('aria-pressed') !== 'true';
-    motionButton.setAttribute('aria-pressed', String(paused));
-    motionButton.textContent = paused ? 'Resume motion' : 'Pause motion';
-    root.classList.toggle('ambient-paused', paused);
-    agent?.setMotion(!paused);
-  });
   canvas.addEventListener('webglcontextlost', (event) => {
     event.preventDefault();
     root.classList.remove('agent-live');
@@ -284,7 +302,6 @@ async function boot() {
     unpinFields();
     ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
     asiSec.classList.remove('pinned-asi');
-    motionButton.hidden = true;
     ScrollTrigger.refresh();
   }, { once: true });
   agent.intro();

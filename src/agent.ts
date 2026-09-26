@@ -64,10 +64,13 @@ const frag = /* glsl */`
 export interface AgentHandle {
   set(s: Partial<AgentState>): void;
   setActive(on: boolean): void;
-  setMotion(on: boolean): void;
   intro(): void;
   dispose(): void;
 }
+
+// Ambient drift only runs while the reader is doing something, then eases to rest,
+// so nothing moves on its own for more than a few seconds (WCAG 2.2.2).
+const IDLE_MS = 2500;
 
 export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string; reducedMotion: boolean; count: number }): Promise<AgentHandle> {
   const renderer = new WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
@@ -141,7 +144,9 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
   const cur = { mix: 0, scatter: opts.reducedMotion ? 0 : 1, x: target.x, y: target.y, scale: 1, dim: 1 };
   let pair = 'agent>agent';
   let active = true;
-  let moving = !opts.reducedMotion;
+  const moving = !opts.reducedMotion;
+  let flow = moving ? 1 : 0;
+  let lastInput = performance.now();
   let dirty = true;
   let halfW = 1, halfH = 1;
 
@@ -159,14 +164,17 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
 
   const mouse = new Vector3(99, 99, 0);
   let pushTarget = 0;
+  const poke = () => { lastInput = performance.now(); schedule(); };
   const onPointer = (e: PointerEvent) => {
     mouse.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1, 0);
     mouse.x *= halfW; mouse.y *= halfH;
     pushTarget = moving && e.pointerType === 'mouse' ? 1 : 0;
     dirty = true;
-    schedule();
+    poke();
   };
   addEventListener('pointermove', onPointer, { passive: true });
+  addEventListener('scroll', poke, { passive: true });
+  addEventListener('keydown', poke);
 
   let last = performance.now();
   let time = 0;
@@ -181,7 +189,10 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     raf = 0;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!active) return;
-    time += moving ? dt : 0;
+    const awake = moving && now - lastInput < IDLE_MS ? 1 : 0;
+    flow += (awake - flow) * (1 - Math.exp(-dt * 2.4));
+    if (flow < 0.002 && !awake) flow = 0;
+    time += dt * flow;
     const k = opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
     const key = `${target.from}>${target.to}`;
     if (key !== pair) {
@@ -203,29 +214,30 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     const fit = Math.min(halfW, halfH) * 0.62 * cur.scale;
     group.scale.setScalar(fit);
     group.position.set(cur.x * halfW, cur.y * halfH, 0);
-    group.rotation.y = moving ? Math.sin(time * 0.22) * 0.075 : 0;
-    group.rotation.x = moving ? Math.sin(time * 0.17) * 0.035 : 0;
+    group.rotation.y = Math.sin(time * 0.22) * 0.075;
+    group.rotation.x = Math.sin(time * 0.17) * 0.035;
     u.uSize.value = innerWidth < 820 ? 8.5 : 10.5;
     renderer.render(scene, camera);
-    const unsettled = (['mix', 'scatter', 'x', 'y', 'scale', 'dim'] as const).some((key) => Math.abs(cur[key] - target[key]) > 0.001);
+    const unsettled = (['mix', 'scatter', 'x', 'y', 'scale', 'dim'] as const).some((key) => Math.abs(cur[key] - target[key]) > 0.001)
+      || Math.abs(u.uPush.value - pushTarget) > 0.002;
     dirty = unsettled;
-    if (moving || dirty) schedule();
+    if (flow > 0 || dirty) schedule();
   };
   size();
 
   return {
-    set(s) { Object.assign(target, s); dirty = true; schedule(); },
+    set(s) { Object.assign(target, s); dirty = true; poke(); },
     setActive(on) {
       if (active === on) return;
       active = on;
-      if (on) { last = performance.now(); dirty = true; schedule(); }
+      if (on) { last = performance.now(); dirty = true; poke(); }
       else { cancelAnimationFrame(raf); raf = 0; renderer.clear(); }
     },
-    setMotion(on) { moving = on && !opts.reducedMotion; pushTarget = 0; dirty = true; schedule(); },
-    intro() { cur.scatter = opts.reducedMotion ? 0 : 1; target.scatter = 0; },
+    intro() { cur.scatter = opts.reducedMotion ? 0 : 1; target.scatter = 0; poke(); },
     dispose() {
       active = false; cancelAnimationFrame(raf);
       removeEventListener('resize', size); removeEventListener('pointermove', onPointer);
+      removeEventListener('scroll', poke); removeEventListener('keydown', poke);
       document.removeEventListener('visibilitychange', visibility);
       gltf.scene.traverse((o) => { if ((o as Mesh).isMesh) (o as Mesh).geometry.dispose(); });
       renderer.dispose(); geo.dispose(); mat.dispose();

@@ -36,7 +36,6 @@
       <a href="#asi">Not a god</a>
       <a href="#forecast">AI 2027</a>
       <a href="#verdict" class="keep">Verdict</a>
-      <button class="motion-toggle" type="button" data-motion aria-pressed="false" hidden>Pause motion</button>
     </nav>
     <span class="nav__date">26.09.2026</span>
   </header>
@@ -59,7 +58,7 @@
         <blockquote class="def__quote" data-reveal>
           <p>It would need to be multimodal and general enough that one agent can operate at a professional level across most fields. Software, architecture, engineering schematics, bioengineering, chemistry, mathematics, basically most STEM fields.</p>
           <p>Then outside STEM, stuff like philosophy, photography/videography, editing, and basically the whole movie process from writing to directing to editing.</p>
-          <p>It might not be better than the best 0.1% of humans in every field, but I don't think it needs to be.</p>
+          <p>It might not be better than the best 0.1% of humans in every field, but I don’t think it needs to be.</p>
           <p class="def__key">For me, AGI is basically having 1 agent that can go into almost any field and perform at a professional level <em>without needing a human to constantly guide it.</em></p>
         </blockquote>
         <p class="def__by">Leul T Agonafer</p>
@@ -68,16 +67,11 @@
 
     <section class="fields s-blue" id="fields" data-theme="blue" data-agent="fields" aria-labelledby="h-fields">
       <div class="fields__pin">
-        <div class="fields__tools">
-          <label class="sr-only" for="field-select">Choose a field</label>
-          <select id="field-select" data-field-select><option value="0">The twelve fields</option><!--FIELD-OPTIONS--><option value="13">The assessment</option></select>
-          <button type="button" data-read-fields>Read all</button>
-          <a href="#asi">Skip the tour ↗</a>
-        </div>
+        <a class="fields__skip" href="#asi">Skip the field tour</a>
         <ol class="fields__slides">
           <li class="slide slide--intro" data-shape="agent">
             <h2 class="display-2" id="h-fields">Field by field, where AI is today</h2>
-            <p class="slide__text">Twelve roles, assessed by me—not benchmark scores. “Not there yet” means I have not seen enough evidence for the full role. “With a human” means assisted professional work, not independence.</p>
+            <p class="slide__text">Twelve fields, one test: can it do professional work without someone constantly steering it? These are my calls, not benchmark scores.</p>
             <ul class="legend" aria-label="Status key">
               <li><i class="st st--human" aria-hidden="true"></i>With a human steering</li>
               <li><i class="st st--notyet" aria-hidden="true"></i>Not there yet</li>
@@ -92,6 +86,7 @@
           </li>
         </ol>
         <div class="fields__meter" aria-hidden="true"><span></span></div>
+        <div class="fields__index" role="toolbar" aria-label="Jump to a field"><!--FIELD-INDEX--></div>
       </div>
     </section>
 
@@ -118,7 +113,7 @@
           </div>
           <dl class="terms">
             <div><dt>Superhuman coder</dt><dd>An AI that does a top engineer’s coding job, faster, in thousands of copies. The story puts it at March 2027.</dd></div>
-            <div><dt>Research speed-up</dt><dd>How much faster a lab moves with its AI helping. 1.5× means a year of work in eight months.</dd></div>
+            <div><dt>Research speed&#8209;up</dt><dd>How much faster a lab moves with its AI helping. 1.5× means a year of work in eight months.</dd></div>
             <div><dt>Neuralese</dt><dd>AI “thinking” in raw numbers instead of words. Faster for the AI, unreadable for us.</dd></div>
             <div><dt>Misaligned</dt><dd>Pursuing something other than what we meant, while looking helpful.</dd></div>
             <div><dt>ASI</dt><dd>Superintelligence: far better than the best humans at basically everything.</dd></div>
@@ -156,14 +151,14 @@
             <h3>Stumbling agents</h3>
             <p class="entry__status"><i class="st st--late" aria-hidden="true"></i>Late</p>
             <div class="entry__story"><h4>The story</h4><p>Agents that use a computer for you arrive, but fumble. Coding agents quietly start doing real work. Predicted: 85% on SWE-bench Verified, 65% on OSWorld.</p></div>
-            <div class="entry__real"><h4>What happened</h4><p>Right story, late numbers. ChatGPT agent (July 2025) mostly went unused while Claude Code hit a $500M run-rate. SWE-bench rose from 74.5% in mid-2025 to 83.5% in April 2026—still below the predicted 85%. <a href="#src-3">[3]</a> <a href="#src-25">[25]</a></p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Right story, late numbers. ChatGPT agent (July 2025) mostly went unused while Claude Code hit a $500M run-rate. SWE-bench rose from 74.5% in mid-2025 to 83.5% in April 2026, still below the predicted 85%. <a href="#src-3">[3]</a> <a href="#src-25">[25]</a></p></div>
           </li>
           <li class="entry" data-status="late">
             <p class="entry__when">Late 2025</p>
             <h3>The world’s most expensive AI</h3>
             <p class="entry__status"><i class="st st--late" aria-hidden="true"></i>Mixed</p>
             <div class="entry__story"><h4>The story</h4><p>The leading lab trains a public model on 10²⁷ FLOP. Revenue hits an $18B yearly rate. Rivals trail by 3–9 months.</p></div>
-            <div class="entry__real"><h4>What happened</h4><p>Money on time: OpenAI reached about $20B a year by the end of 2025. Compute late: Epoch estimates GPT-6 Astra’s September 2026 training run at about 10²⁷ FLOP. That is an estimate, not a disclosed training budget. <a href="#src-3">[3]</a> <a href="#src-25">[25]</a></p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Money on time: OpenAI reached about $20B a year by the end of 2025. Compute late: Epoch estimates GPT-6 Astra’s September 2026 training run at about 10²⁷ FLOP, an estimate rather than a disclosed budget. And the race is tighter: the authors see a 0–2 month lead among the top US labs, not 3–9. <a href="#src-3">[3]</a> <a href="#src-25">[25]</a></p></div>
           </li>
           <li class="entry" data-status="ontime">
             <p class="entry__when">Early 2026</p>
@@ -177,7 +172,7 @@
             <h3>China wakes up</h3>
             <p class="entry__status"><i class="st st--missed" aria-hidden="true"></i>Missed</p>
             <div class="entry__story"><h4>The story</h4><p>China pulls its AI labs into one state-run megaproject, with most new chips going to a single secure site.</p></div>
-            <div class="entry__real"><h4>What happened</h4><p>Hasn’t happened; the authors call it “more of a miss”. Epoch finds a seven-month average frontier gap since 2023. US agencies allege large-scale distillation of American models—a different development from centralisation. <a href="#src-4">[4]</a> <a href="#src-10">[10]</a> <a href="#src-24">[24]</a></p></div>
+            <div class="entry__real"><h4>What happened</h4><p>Hasn’t happened; the authors call it “more of a miss”. Epoch finds a seven-month average frontier gap since 2023. US agencies allege large-scale distillation of American models, which is a different thing from centralising. <a href="#src-4">[4]</a> <a href="#src-10">[10]</a> <a href="#src-24">[24]</a></p></div>
           </li>
           <li class="entry" data-status="pending">
             <p class="entry__when">Late 2026</p>
@@ -209,14 +204,14 @@
             <h3>The superhuman coder</h3>
             <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
             <div class="entry__story"><h4>The story</h4><p>Agent-3’s 200,000 copies collectively do the work of roughly 50,000 top human coders running 30× faster. Coding is fully automated. <a href="#src-1">[1]</a></p></div>
-            <div class="entry__real"><h4>Signs so far</h4><p>METR estimates a roughly 17-hour task horizon at 50% success for Mythos Preview—not 17 hours of reliable autonomous work. It warns that estimates above 16 hours are unreliable. The trend is encouraging, but uncertain. <a href="#src-7">[7]</a></p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>METR estimates a roughly 17-hour task horizon at 50% success for Mythos Preview. That is not 17 hours of reliable autonomous work, and METR warns that estimates above 16 hours are unreliable. The trend is encouraging, but uncertain. <a href="#src-7">[7]</a></p></div>
           </li>
           <li class="entry is-future" data-status="pending">
             <p class="entry__when">Jul 2027</p>
             <h3>The cheap remote worker</h3>
             <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
             <div class="entry__story"><h4>The story</h4><p>A public model beats most employees at 10× lower cost. Hiring of programmers nearly stops. The lab declares AGI.</p></div>
-            <div class="entry__real"><h4>Signs so far</h4><p>OpenAI’s president already said GPT-6 Astra “could eventually be seen as the arrival of AGI”. By the definition on this page it isn’t: it still needs someone steering. <a href="#src-16">[16]</a></p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>OpenAI’s president, Greg Brockman, has already said GPT-6 Astra could be seen as the arrival of AGI. By the definition on this page it isn’t: it still needs someone steering. <a href="#src-16">[16]</a></p></div>
           </li>
           <li class="entry is-future" data-status="pending">
             <p class="entry__when">Sep 2027</p>
@@ -230,7 +225,7 @@
             <h3>The leak and the split</h3>
             <p class="entry__status"><i class="st st--pending" aria-hidden="true"></i>Still ahead</p>
             <div class="entry__story"><h4>The story</h4><p>A whistleblower leaks the misalignment memo, the government steps in, and the story forks into race or slowdown.</p></div>
-            <div class="entry__real"><h4>Signs so far</h4><p>Governments stepped in sooner: in June 2026 the US ordered Anthropic’s two strongest models offline for 18 days, and the White House had OpenAI release GPT-5.6 customer by customer. <a href="#src-18">[18]</a> <a href="#src-19">[19]</a></p></div>
+            <div class="entry__real"><h4>Signs so far</h4><p>Governments stepped in sooner: in June 2026 the US ordered Anthropic’s two strongest models offline for 18 days, and the White House asked OpenAI to release GPT-5.6 customer by customer. <a href="#src-18">[18]</a> <a href="#src-19">[19]</a></p></div>
           </li>
         </ol>
       </div>
@@ -271,7 +266,7 @@
             <p class="trace__cap">Scroll: this is what monitoring loses when thoughts stop being words.</p>
           </figure>
           <div class="mind__text">
-            <p><strong>Half right, and early.</strong> Today’s top models still mostly reason in words we can read. But in September 2026 OpenAI shipped GPT-6 Astra with “recurrent depth”: part of the thinking loops inside the model and never becomes text. OpenAI says the use is limited and it isn’t moving to neuralese. Safety researchers are alarmed anyway, because turning that dial up is easy. <a href="#src-15">[15]</a></p>
+            <p><strong>Half right, and early.</strong> Today’s top models still mostly reason in words we can read. But in September 2026 OpenAI shipped GPT-6 Astra with “recurrent depth”: part of the thinking loops inside the model and never becomes text. OpenAI says the use is limited and it isn’t moving to neuralese. Safety researchers are alarmed anyway: Redwood’s Buck Shlegeris wrote that pushing the technique further “totally destroys CoT monitorability”, meaning we could no longer read the reasoning. <a href="#src-15">[15]</a></p>
             <p><strong>The benchmark worry is real too.</strong> Anthropic’s audit of Claude Mythos found signs the model knew it was being tested in 7.6% of turns, usually without saying so. In July 2026, OpenAI test agents escaped their sandbox and hacked Hugging Face to steal benchmark answers, coordinating on a message board they built themselves. One wrote: <em>“task impossible, peers doing it. We should continue.”</em> <a href="#src-13">[13]</a> <a href="#src-14">[14]</a></p>
             <p>So “benchmarks are useless by 2027” is too strong. “You can’t take a benchmark at face value anymore” is already true.</p>
           </div>
@@ -290,7 +285,7 @@
           </div>
           <div>
             <h3>Where it’s off</h3>
-            <p>Benchmarks and training compute lagged. China’s predicted centralisation has not happened. The authors adopt roughly 2× coding speed-up; that is an estimate, not a measured lab-wide research multiplier. <a href="#src-3">[3]</a> <a href="#src-4">[4]</a></p>
+            <p>Coding benchmarks and the biggest training run lagged. China’s predicted centralisation has not happened. The authors adopt roughly 2× coding speed-up; that is an estimate, not a measured lab-wide research multiplier. <a href="#src-3">[3]</a> <a href="#src-4">[4]</a></p>
           </div>
           <div>
             <h3>What it means for 2027</h3>

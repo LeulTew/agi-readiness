@@ -52,7 +52,7 @@ function buildHtml(): Plugin {
     name: 'build-html',
     transformIndexHtml: (html) => html
       .replace('<!--FIELDS-->', fieldSlides())
-      .replace('<!--FIELD-OPTIONS-->', FIELDS.map((f, i) => `<option value="${i + 1}">${esc(f.name)}</option>`).join(''))
+      .replace('<!--FIELD-INDEX-->', FIELDS.map((f, i) => `<button type="button" data-go="${i + 1}" style="--x:${((i + 1) / (FIELDS.length + 1)).toFixed(4)}" aria-label="${esc(f.name)}" tabindex="${i === 0 ? 0 : -1}">${String(i + 1).padStart(2, '0')}</button>`).join(''))
       .replace('<!--TALLY-->', tally())
       .replace('<!--CHART-->', slipChart()),
   };

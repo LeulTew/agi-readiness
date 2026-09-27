@@ -7,7 +7,7 @@ import Lenis from 'lenis';
 import type { AgentHandle, AgentState } from './agent';
 import { riseLines, stopLinesIn, textLeaves } from './motion/lines';
 import { createDust, type Dust } from './motion/dust';
-import { scrollReveal, autonomyWave, fieldRoll, typeLine, countUp, trueFocus, textPressure, neuralese, type Fx } from './motion/fx';
+import { scrollReveal, autonomyWave, fieldRoll, typeLine, countUp, trueFocus, textPressure, neuralese, odometer, blurWords, type Fx } from './motion/fx';
 import { axes, easeInOut } from './motion/split';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -110,11 +110,17 @@ const defKey = $('.def__key em');
 const halLine = $('#screen .screen__line');
 const fxOf = new Map<Element, Fx>();
 let hal: ReturnType<typeof typeLine> | null = null;
+// field counts roll from the field you came from (fieldPrev is set by applyFields before the switch)
+let fieldPrev = -1;
+const countOf = (s: HTMLElement | undefined) => (s ? $('.fc-n', s)?.textContent ?? null : null);
 if (!reduced) {
+  // reality-check statuses are stamped as a whole (styles), so their words don't rise on their own
+  $$('.entry__status').forEach((s) => s.classList.add('fx'));
   if (defClaim) { defClaim.classList.add('fx-own'); scrollReveal(defClaim); }
   if (defKey) autonomyWave(defKey);
   if (halLine) { halLine.classList.add('fx-own'); hal = typeLine(halLine); }
   $$('.stats b').forEach((b) => fxOf.set(b, countUp(b)));
+  $$('.tally b').forEach((b) => fxOf.set(b, countUp(b, 1.2)));
   const name = $('.foot__name');
   if (name) fxOf.set(name, textPressure(name));
   const trace = $('[data-scramble]');
@@ -122,6 +128,24 @@ if (!reduced) {
   // the verdict's frame measures the split words, so it starts after the reveal has split them (below)
   const big = $('.verdict__big');
   if (big) queueMicrotask(() => trueFocus(big));
+  // "01 / 12": the leading number becomes its own span (same text) so it can roll on its own
+  $$('#fields .field__count').forEach((p) => {
+    const t = p.firstChild;
+    const m = t instanceof Text ? /^(\s*)(\d+)/.exec(t.data) : null;
+    if (!(t instanceof Text) || !m) return;
+    t.splitText(m[0].length);
+    const n = document.createElement('span');
+    n.className = 'fc-n';
+    n.textContent = m[2];
+    t.data = m[1];
+    t.after(n);
+    fxOf.set(n, odometer(n, () => (fieldPrev === 0 ? m[2].replace(/\d/g, '0') : countOf(slides[fieldPrev])), 0.7));
+  });
+  // film years roll like a meter from the film before; the first rewinds from the year this was written
+  const years = $$('.reel .film__year');
+  const now = /\d{4}/.exec($('.nav__date')?.textContent || '')?.[0] ?? null;
+  years.forEach((y, i) => { y.classList.add('fx-x'); fxOf.set(y, odometer(y, () => (i ? years[i - 1].textContent : now))); });
+  $$('.reel .film__lesson').forEach(blurWords);
 }
 
 // ---------------------------------------------------------------- the agent (particles)
@@ -293,10 +317,10 @@ function rvRegister() {
       it.kids = [...el.children].filter((c): c is HTMLElement => c instanceof HTMLElement && !c.classList.contains('sr-only'));
       it.kids.forEach((k, i) => {
         k.style.setProperty('--ci', String(Math.min(i, 6)));
-        // field names are set by their own roll (fieldRoll), in step with the particle morph
-        k.classList.add(roll && k.matches('.field__name') ? 'rv-x' : k.matches(RV_DISPLAY) && splitDisplay(k) ? 'rv-d' : 'rv-c');
+        // field names and film years are set by their own effects (fieldRoll, odometer), not the word rise
+        k.classList.add(k.matches('.fx-x') || (roll && k.matches('.field__name')) ? 'rv-x' : k.matches(RV_DISPLAY) && splitDisplay(k) ? 'rv-d' : 'rv-c');
       });
-    } else if (el.matches(RV_DISPLAY) && splitDisplay(el)) el.classList.add('rv-d');
+    } else if (el.matches(RV_DISPLAY) && !el.matches('.fx-x') && splitDisplay(el)) el.classList.add('rv-d');
     else el.classList.add('rv-b');
     if (ctl) el.classList.add('rv-ctl');
     rvMap.set(el, it);
@@ -428,6 +452,7 @@ const applyFields = () => {
     // keyboard focus in the outgoing field moves to the incoming field's index button
     handOff(slides[activeSlide], ticks[roving] ?? slides[active]);
     rollFrom = nameOf[activeSlide] ?? -1;
+    fieldPrev = activeSlide;
     activeSlide = active;
     slides.forEach((s, i) => s.classList.toggle('is-active', i === active));
     ticks.forEach((b, i) => {
@@ -620,11 +645,15 @@ slideStops();
 document.fonts?.ready.then(slideStops);
 
 // start the reveal once the pinned chapters exist, so their slides are handed to the pin logic
+// each camp's name rides in with its station along the axis: it starts where the station starts ("stop")
+const campShift = () => $$('.camp').forEach((c) => $('.camp__name', c)?.style.setProperty('--shift', getComputedStyle(c).paddingLeft));
 if (!reduced) {
   rvRegister();
   rvStart();
   if (fieldTrigger) applyFields();
   if (asiSec.classList.contains('pinned-asi')) applyAsi();
+  campShift();
+  addEventListener('resize', campShift);
   document.fonts?.ready.then(() => { lockDisplayWidths(); dust?.invalidate(); });
   addEventListener('load', rvSettle);
 }

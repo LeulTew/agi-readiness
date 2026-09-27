@@ -150,7 +150,7 @@ h1, h2, h3 { text-wrap: balance; }
 /* ---------------------------------------------------------------- status glyphs (shape carries meaning, not colour) */
 .st { display: inline-block; flex: none; width: .95em; height: .95em; border-radius: 50%; border: 2px solid currentColor; vertical-align: -.12em; }
 .st--human, .st--late { background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
-.st--solo, .st--ontime { background: currentColor; }
+.st--solo, .st--ontime { background: linear-gradient(currentColor, currentColor); }
 .st--notyet { background: transparent; }
 .st--pending { border-style: dashed; }
 .st--missed { position: relative; }
@@ -596,7 +596,7 @@ a > .lw > .lwi { text-decoration: inherit; text-decoration-color: currentColor; 
   .rw-locked .asi__line--2[data-rv] .rw { font-stretch: inherit; font-weight: inherit; }
 
   /* first placement and resets happen off screen, without animating */
-  .rv-now, .rv-now > .rv-c, .rv-now > .rv-x, .rv-now .rw, .rv-now .band, .rv-now .slip__track::before { transition: none !important; }
+  .rv-now, .rv-now > .rv-c, .rv-now > .rv-x, .rv-now .rw, .rv-now .bw, .rv-now .st, .rv-now .band, .rv-now .slip__track::before { transition: none !important; }
   /* compositor hints only while something is moving */
   .rv-busy, .rv-busy > .rv-c { will-change: opacity; }
   .rv-busy .rw, .lw-go .lwi { will-change: transform; }
@@ -637,11 +637,49 @@ a > .lw > .lwi { text-decoration: inherit; text-decoration-color: currentColor; 
 @keyframes caret { 50% { opacity: 0; } }
 /* stats: digits keep one width while they count */
 .cu { font-variant-numeric: tabular-nums; }
+/* odometer (film years, field counts): digit strips clipped to each real glyph, over the hidden digits */
+.odo { position: relative; }
+.odo.is-rolling { visibility: hidden; }
+.odo-o { position: absolute; inset: 0; visibility: visible; pointer-events: none; }
+.odo-c { position: absolute; clip-path: inset(0 -.3em); }
+.odo-s { position: absolute; left: 0; top: 0; width: 100%; will-change: transform; }
+.odo-s > span { display: block; text-align: center; white-space: pre; }
+/* film lessons: BlurText words */
+.bt .bw { display: inline-block; }
 @media (prefers-reduced-motion: no-preference) {
-  /* parts that run their own entrance (field names) wait hidden, then appear as it starts */
+  /* parts that run their own entrance (field names, film years) wait hidden, then appear as it starts */
   .rv-x { transition: opacity .2s var(--rv-ease-out); }
   [data-rv]:not([data-rv='in']) > .rv-x { opacity: 0; }
   [data-rv='in'] > .rv-x { transition: opacity .22s linear calc(var(--rv-base, 0s) + var(--rv-i, 0) * var(--rv-stagger)); }
+
+  [data-rv] > .bt .bw, .bt[data-rv] .bw { transition: opacity var(--rv-out) linear, filter var(--rv-out) var(--rv-ease-out), transform var(--rv-out) var(--rv-ease-out); }
+  [data-rv]:not([data-rv='in']) > .bt .bw, .bt[data-rv]:not([data-rv='in']) .bw { opacity: 0; filter: blur(10px); transform: translate3d(0, -.42em, 0); }
+  [data-rv='in'] > .bt .bw, .bt[data-rv='in'] .bw {
+    transition-duration: .55s, .95s, .95s; transition-timing-function: linear, var(--ease), var(--ease);
+    transition-delay: calc(var(--rv-base, 0s) + var(--rv-i, 0) * var(--rv-stagger) + var(--ci, 0) * var(--rv-child) + .1s + var(--bi, 0) * 55ms);
+  }
+  .rv-busy .bw { will-change: transform, filter, opacity; }
+
+  /* reality-check statuses land like a stamp once the claim above them is set */
+  .entry__status.rv-c, .entry__status.rv-b { transform-origin: 0 55%; transition: opacity var(--rv-out) var(--rv-ease-out), transform var(--rv-out) var(--rv-ease-out); }
+  [data-rv]:not([data-rv='in']) > .entry__status.rv-c, .entry__status.rv-b[data-rv]:not([data-rv='in']) { transform: scale(1.45) rotate(-5deg); }
+  [data-rv='in'] > .entry__status.rv-c, .entry__status.rv-b[data-rv='in'] {
+    transition: opacity .14s linear, transform .42s cubic-bezier(.12, .9, .2, 1);
+    transition-delay: calc(var(--rv-base, 0s) + var(--rv-i, 0) * var(--rv-stagger) + .44s);
+  }
+
+  /* field status glyphs spin in and fill (half, full, empty, dashed) as the field is called */
+  .pinned .field__state .st { background-repeat: no-repeat; background-position: 0 0; transition: transform var(--rv-out) var(--rv-ease-out), background-size var(--rv-out) var(--rv-ease-out); }
+  .pinned .slide[data-rv]:not([data-rv='in']) .field__state .st { transform: scale(.3) rotate(-140deg); background-size: 0% 100%; }
+  .pinned .slide[data-rv='in'] .field__state .st {
+    transition: transform .75s var(--ease), background-size .7s cubic-bezier(.65, 0, .35, 1);
+    transition-delay: calc(var(--rv-base, 0s) + .42s), calc(var(--rv-base, 0s) + .82s);
+  }
+
+  /* each camp's name rides in with its station, from the start of the axis to its place */
+  .camp__name { transition: transform var(--rv-out) var(--rv-ease-out); }
+  .camp__name[data-rv]:not([data-rv='in']), .camp[data-rv]:not([data-rv='in']) > .camp__name { transform: translate3d(calc(var(--shift, 0px) * -1), 0, 0); }
+  .camp__name[data-rv='in'], .camp[data-rv='in'] > .camp__name { transition: transform 1.1s var(--ease) .12s; }
 }
 /* verdict: TrueFocus corner brackets */
 .verdict__big.has-tf { position: relative; }

@@ -280,6 +280,90 @@ export function countUp(b: HTMLElement, dur = 1.9): Fx {
   };
 }
 
+// ---------------------------------------------------------------- odometer: film years, field counts
+// Each digit rolls, like a counter wheel, from another number to its own: every column is a strip of
+// digits clipped to one glyph, laid exactly over the real (hidden) digit. Columns move together in one
+// direction (forward if the number grows, back if it shrinks), so 1968 -> 1970 carries like a meter.
+// At rest the overlay is removed and the plain text shows.
+export function odometer(el: HTMLElement, from: () => string | null, dur = 1.05): Fx {
+  el.classList.add('odo');
+  let over: HTMLElement | null = null;
+  let tw: gsap.core.Timeline | null = null;
+  const clear = () => { tw?.kill(); tw = null; over?.remove(); over = null; el.classList.remove('is-rolling'); };
+  return {
+    park: clear,
+    finish: clear,
+    play(delay = 0) {
+      clear();
+      const to = labelOf(el);
+      const f = from();
+      if (!f || f.length !== to.length || f === to || !/^\d+$/.test(to) || !/^\d+$/.test(f)) return;
+      const dir = +to > +f ? 1 : -1;
+      const boxes = glyphBoxes(el, el);
+      if (boxes.length !== to.length) return;
+      over = document.createElement('span');
+      over.className = 'odo-o';
+      over.setAttribute('aria-hidden', 'true');
+      const strips: HTMLElement[] = [];
+      const steps: number[] = [];
+      boxes.forEach((g, i) => {
+        const a = +f[i], b = +to[i];
+        const n = dir > 0 ? (b - a + 10) % 10 : (a - b + 10) % 10;
+        const cell = document.createElement('span');
+        cell.className = 'odo-c';
+        Object.assign(cell.style, { left: `${g.x}px`, top: `${g.y}px`, width: `${g.w}px`, height: `${g.h}px` });
+        const strip = document.createElement('span');
+        strip.className = 'odo-s';
+        // forward: the next digit comes up from below; back: it comes down from above
+        for (let k = 0; k <= n; k++) {
+          const d = document.createElement('span');
+          d.textContent = String((a + dir * (dir > 0 ? k : n - k) + 20) % 10);
+          d.style.height = d.style.lineHeight = `${g.h}px`;
+          strip.append(d);
+        }
+        cell.append(strip);
+        over!.append(cell);
+        strips.push(strip);
+        steps.push(n);
+      });
+      el.append(over);
+      el.classList.add('is-rolling');
+      const h = boxes[0].h;
+      tw = gsap.timeline({ delay, onComplete: clear });
+      strips.forEach((s, i) => {
+        if (!steps[i]) return;
+        const y0 = dir > 0 ? 0 : -steps[i] * h, y1 = dir > 0 ? -steps[i] * h : 0;
+        tw!.fromTo(s, { y: y0 }, { y: y1, duration: dur * (0.75 + 0.25 * Math.min(1, steps[i] / 6)), ease: 'power3.inOut' }, i * 0.05);
+      });
+    },
+  };
+}
+
+// ---------------------------------------------------------------- film lessons: BlurText
+// A short statement comes into focus word by word, dropping a little as it sharpens. CSS runs it from
+// the reveal state of the film frame; this only splits the words (aria-hidden, with an sr-only copy).
+export function blurWords(p: HTMLElement) {
+  if (p.querySelector('a, button')) return;
+  const label = labelOf(p);
+  p.classList.add('fx', 'bt');
+  p.textContent = '';
+  const vis = document.createElement('span');
+  vis.className = 'bt-v';
+  vis.setAttribute('aria-hidden', 'true');
+  let i = 0;
+  for (const part of label.split(SPACE_RE)) {
+    if (!part) continue;
+    if (isSpace(part)) { vis.append(' '); continue; }
+    const w = document.createElement('span');
+    w.className = 'bw';
+    w.style.setProperty('--bi', String(i++));
+    w.textContent = part;
+    vis.append(w);
+  }
+  p.append(vis);
+  srCopy(p, label);
+}
+
 // ---------------------------------------------------------------- verdict: TrueFocus, scrubbed
 // Corner brackets frame "Broadly right." while the second line waits out of focus, then travel down
 // to it as it sharpens; at the end both lines are sharp and the frame lets go.

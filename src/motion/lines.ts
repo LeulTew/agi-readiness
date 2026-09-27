@@ -7,7 +7,7 @@ const BREAK_AFTER = /(?<=[-–—/])(?=[^ \t\n\r\f])/;
 const MAX_CHARS = 900;
 const LINE_STEP = 0.065;
 const DUR = 0.9;
-const SKIP = '.sr-only, .fx, .rw, [aria-hidden="true"], svg, details, button, input, textarea, select';
+const SKIP = '.sr-only, .fx, .odo, .rw, [aria-hidden="true"], svg, details, button, input, textarea, select';
 
 interface Live { words: HTMLElement[]; timer: number }
 const live = new Map<HTMLElement, Live>();

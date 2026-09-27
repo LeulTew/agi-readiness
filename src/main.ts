@@ -5,6 +5,9 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import type { AgentHandle, AgentState } from './agent';
+import { riseLines, stopLinesIn, textLeaves } from './motion/lines';
+import { createDust, type Dust } from './motion/dust';
+import { scrollReveal, autonomyWave } from './motion/fx';
 
 gsap.registerPlugin(ScrollTrigger);
 const root = document.documentElement;
@@ -97,28 +100,13 @@ $$<HTMLAnchorElement>('main a[href^="#src-"]').forEach((a) => {
   span.append(...group);
 });
 
-// ---------------------------------------------------------------- word-by-word reveal
-function splitWords(el: HTMLElement) {
-  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
-  while (walk.nextNode()) nodes.push(walk.currentNode as Text);
-  for (const n of nodes) {
-    const frag = document.createDocumentFragment();
-    n.data.split(/(\s+)/).forEach((part) => {
-      if (!part) return;
-      if (/^\s+$/.test(part)) frag.append(part);
-      else { const s = document.createElement('span'); s.className = 'w'; s.textContent = part; frag.append(s); }
-    });
-    n.replaceWith(frag);
-  }
-  return $$('.w', el);
-}
+// ---------------------------------------------------------------- section text effects (motion/fx.ts)
+// Found by structure, never by copy. Reduced motion skips all of them: the text is simply there.
+const defClaim = $('.def__quote > p:first-child');
+const defKey = $('.def__key em');
 if (!reduced) {
-  $$('[data-reveal]').forEach((el) => {
-    const words = splitWords(el);
-    // lit by the time the last line reaches the lower fifth, so the closing condition is at full strength where it is read
-    gsap.to(words, { opacity: 1, ease: 'none', stagger: 0.08, scrollTrigger: { trigger: el, start: 'top 82%', end: 'bottom 80%', scrub: 0.6 } });
-  });
+  if (defClaim) { defClaim.classList.add('fx-own'); scrollReveal(defClaim); }
+  if (defKey) autonomyWave(defKey);
 }
 
 // ---------------------------------------------------------------- the agent (particles)
@@ -149,16 +137,18 @@ const HAL_RED = '#ff2d1f';
 const halBlock = $('#screen .screen__hal');
 
 // ---------------------------------------------------------------- text reveal
-// Text blocks animate in each time they enter the reading band and out when they leave it, in both
-// directions (styles: "text reveal"). Targets are found by structure, not by copy. JS only ever adds
-// hidden states, and only to blocks that are off screen, so nothing is lost if this never runs.
+// Text is set as you read down: display type rises word by word through a mask; body copy rises line
+// by line (motion/lines.ts). Flowing text reveals once; scrolling back finds it already there. The
+// pinned chapters drive their own blocks both ways.
+// Targets are found by structure, not by copy. JS only ever adds hidden states, and only to blocks
+// that are off screen, so nothing is lost if this never runs (styles: "text reveal").
 type RvState = 'in' | 'above' | 'below' | 'before' | 'after';
 interface RvItem { el: HTMLElement; st: RvState | ''; ctl: boolean; t: number; kids: HTMLElement[] }
 const RV_GROUP = '.slide, .entry, .terms > div, .endings > div, .verdict__cols > div, .stats > div, .trace, .asi__line--3, .camp, .person, .film';
 const RV_DISPLAY = 'main h1, main h2, .verdict__big, .foot__name, .field__name, .asi__line--1, .asi__line--2, .asi__big, .camp__name, .screen__line, .film__year, .film__title';
 const RV_BODY = 'main p, main li, main h3, main h4, main dt, main dd, .chart figcaption, .hero__cue, .foot p, .foot li, .sources';
-const RV_SKIP = '.sr-only, .nav, .fields__index, .fields__skip, .slip__axis';
-const RV_TOP = NAV + 48; // blocks leave just below the nav, so the exit is seen
+const RV_SKIP = '.sr-only, .nav, .fields__index, .fields__skip, .slip__axis, .fx-own';
+const RV_TOP = NAV + 48;
 const RV_BOTTOM = 0.06;
 const rvMap = new Map<Element, RvItem>();
 const rvNow = new Set<HTMLElement>();
@@ -191,7 +181,7 @@ function splitDisplay(el: HTMLElement) {
     n.replaceWith(frag);
   }
   const sr = document.createElement('span');
-  sr.className = 'sr-only';
+  sr.className = 'sr-only sr-copy';
   sr.textContent = label;
   el.append(sr);
   el.dataset.rw = '1';
@@ -203,16 +193,31 @@ const rvFlushNow = () => {
   // two frames: the hidden state must be painted once with transitions off before they come back
   rvRaf = requestAnimationFrame(() => { rvRaf = requestAnimationFrame(() => { rvRaf = 0; rvNow.forEach((el) => el.classList.remove('rv-now')); rvNow.clear(); }); });
 };
+const secs = (el: HTMLElement, prop: string) => parseFloat(getComputedStyle(el).getPropertyValue(prop)) || 0;
+// what plays when a block arrives: its text leaves rise line by line on the same clock as the CSS cascade
+let lineBatch: { leaf: HTMLElement; delay: number }[] = [];
+let lineRaf = 0;
+function onArrive(it: RvItem, i: number) {
+  const base = secs(it.el, '--rv-base') + i * 0.09;
+  const targets = it.kids.length ? it.kids : [it.el];
+  targets.forEach((k, ci) => {
+    if (k.classList.contains('rv-d')) return;
+    textLeaves(k).forEach((leaf, j) => lineBatch.push({ leaf, delay: base + Math.min(ci, 6) * 0.07 + j * 0.05 }));
+  });
+  if (!lineRaf) lineRaf = requestAnimationFrame(() => { lineRaf = 0; const b = lineBatch; lineBatch = []; riseLines(b); });
+}
 function setRv(it: RvItem, st: RvState, instant = false, i = 0) {
   if (it.st === st) return;
   it.st = st;
   const el = it.el;
+  if (st !== 'in') stopLinesIn(el);
   if (instant) { el.classList.add('rv-now'); rvNow.add(el); el.dataset.rv = st; rvFlushNow(); return; }
   el.style.setProperty('--rv-i', String(i));
   el.dataset.rv = st;
   el.classList.add('rv-busy');
   clearTimeout(it.t);
   it.t = window.setTimeout(() => el.classList.remove('rv-busy'), st === 'in' ? 2400 : 700);
+  if (st === 'in') onArrive(it, i);
 }
 // the pinned chapters drive their own slides and lines through this
 function rvSet(el: HTMLElement, st: RvState) {
@@ -274,6 +279,12 @@ function rvStateOf(r: DOMRectReadOnly, H: number, W: number, pad = 0): RvState {
   if (r.left >= W + pad) return 'after';
   return 'in';
 }
+// only text still ahead of the reader (below, or to the right on the sideways track) is ever hidden
+const ahead = (st: RvState) => st === 'below' || st === 'after';
+function arrive(list: RvItem[]) {
+  let i = 0;
+  for (const it of list) setRv(it, 'in', false, Math.min(i++, 8));
+}
 function rvObserve(entries: IntersectionObserverEntry[]) {
   const H = innerHeight, W = innerWidth;
   const arriving: { it: RvItem; r: DOMRectReadOnly }[] = [];
@@ -282,31 +293,33 @@ function rvObserve(entries: IntersectionObserverEntry[]) {
     if (!it || it.ctl) continue;
     const r = e.boundingClientRect;
     if (!it.st) {
-      // first placement: anything on screen at all stays as it is; the rest is parked off screen
+      // first placement: anything on screen or already passed stays as it is; text ahead is parked
       const onScreen = r.bottom > 0 && r.top < H && r.right > 0 && r.left < W;
-      setRv(it, onScreen ? 'in' : rvStateOf(r, H, W), true);
+      const st = rvStateOf(r, H, W);
+      setRv(it, onScreen || !ahead(st) ? 'in' : st, true);
       continue;
     }
+    if (it.st === 'in') continue;
     const st = e.isIntersecting ? 'in' : rvStateOf(r, H, W);
-    if (st === 'in') arriving.push({ it, r }); else setRv(it, st);
+    // jumped past without being seen (nav links, fast flings): it is simply there when you look back
+    if (st === 'in') arriving.push({ it, r }); else if (!ahead(st)) setRv(it, 'in', true);
   }
   // blocks arriving together cascade in reading order
-  arriving.sort((a, b) => (a.r.top - b.r.top) || (a.r.left - b.r.left)).forEach(({ it }, i) => setRv(it, 'in', false, Math.min(i, 8)));
+  arrive(arriving.sort((a, b) => (a.r.top - b.r.top) || (a.r.left - b.r.left)).map((a) => a.it));
 }
-// Settle pass once scrolling stops. Hidden blocks are offset by their own lift, so a block parked at the
-// very end of the page could otherwise never cross into the band; this also re-arms blocks that were
-// already on screen at load, so their next entry animates too.
+// Settle pass once scrolling stops: a hidden block is parked below its own place, so one at the very end
+// of the page could otherwise never cross into the band; blocks passed unseen are shown off screen.
 function rvCheck() {
   const H = innerHeight, W = innerWidth;
   const arriving: RvItem[] = [];
   for (const it of rvMap.values()) {
-    if (it.ctl || !it.st) continue;
+    if (it.ctl || !it.st || it.st === 'in') continue;
     const r = it.el.getBoundingClientRect();
     if (!r.width && !r.height) continue;
-    if (it.st !== 'in') { if (rvStateOf(r, H, W, 34) === 'in') arriving.push(it); }
-    else if (r.bottom <= 0 || r.top >= H || r.right <= 0 || r.left >= W) setRv(it, rvStateOf(r, H, W), true);
+    const st = rvStateOf(r, H, W, 34);
+    if (st === 'in') arriving.push(it); else if (!ahead(st)) setRv(it, 'in', true);
   }
-  arriving.forEach((it, i) => setRv(it, 'in', false, Math.min(i, 8)));
+  arrive(arriving);
 }
 const rvSettle = () => { clearTimeout(rvTimer); rvTimer = window.setTimeout(rvCheck, 180); };
 function rvStart() {
@@ -322,6 +335,7 @@ function rvRebuild() {
   for (const it of [...rvMap.values()]) {
     if (it.ctl) continue;
     clearTimeout(it.t);
+    stopLinesIn(it.el);
     delete it.el.dataset.rv;
     it.el.classList.remove('rv-b', 'rv-g', 'rv-busy', 'rv-now');
     it.el.style.removeProperty('--rv-i');
@@ -408,10 +422,20 @@ function slideStops() {
 const asiSec = $('#asi')!;
 const lines = $$('.asi__line', asiSec);
 let asiP = 0;
+let dust: Dust | null = null;
+const unpinAsi = () => {
+  ScrollTrigger.getAll().filter((st) => st.trigger === asiSec || st.trigger === halBlock).forEach((st) => st.kill(true));
+  asiSec.classList.remove('pinned-asi');
+  halBlock?.closest('.screen')?.classList.remove('pinned-hal');
+  dust?.destroy(); dust = null;
+  rvRelease(lines);
+};
 const applyAsi = () => {
   const i = asiP < 0.3 ? 0 : asiP < 0.64 ? 1 : 2;
   lines.forEach((l, j) => { if (j !== i) handOff(l, lines[i]); });
   lines.forEach((l, j) => { l.classList.toggle('is-active', j === i); rvSet(l, j === i ? 'in' : j < i ? 'above' : 'below'); });
+  // "in a snap." turns to dust just before the agent does, and re-forms on the way back
+  dust?.update(gsap.utils.clamp(0, 1, (asiP - 0.13) / 0.27));
   const base = place.asi();
   if (i === 0) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base });
   else if (i === 1) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: gsap.utils.clamp(0, 1, (asiP - 0.3) / 0.16), dim: 1, ...base });
@@ -428,10 +452,15 @@ if (canAnimate) {
   });
   applyFields();
   asiSec.classList.add('pinned-asi');
+  const snap = $('.asi__line--1 em', asiSec);
+  // the grains are drawn into the agent: where it sits, and how big it is (agent.ts: x/y in half-viewports, scale 1 = 62% of the short side)
+  const agentAt = () => { const a = place.asi(), m = Math.min(innerWidth, innerHeight); return { x: ((a.x + 1) / 2) * innerWidth, y: ((1 - a.y) / 2) * innerHeight, r: 0.31 * a.scale * m }; };
+  if (snap) dust = createDust(snap, $('.asi__pin', asiSec)!, agentAt, () => (mobile() ? 1200 : 2500));
   ScrollTrigger.create({
     trigger: asiSec, pin: $('.asi__pin', asiSec), start: 'top top', end: () => `+=${innerHeight * 2.4}`,
     scrub: true, onUpdate: (st) => { asiP = st.progress; applyAsi(); },
-    onToggle: (st) => { if (st.isActive) applyAsi(); },
+    // the dust canvas only exists while the chapter is pinned
+    onToggle: (st) => { if (st.isActive) applyAsi(); else dust?.release(); },
   });
   applyAsi();
   // HAL holds the screen for a beat, so the eye and its line are read together
@@ -500,44 +529,11 @@ const updateZone = () => {
 
 // ---------------------------------------------------------------- chart: bars draw each time their row is revealed (styles: .slip li[data-rv])
 
-// ---------------------------------------------------------------- neuralese: words dissolve into numbers as you scroll
-const trace = $('[data-scramble]');
-if (trace && !reduced) {
-  const tl = $$('.trace__line', trace).map((el) => {
-    const text = el.dataset.text || el.textContent || '';
-    const order = [...text].map((_, i) => i).sort(() => Math.random() - 0.5);
-    const rank = new Array(text.length); order.forEach((c, r) => (rank[c] = r / text.length));
-    el.setAttribute('aria-hidden', 'true');
-    return { el, text, rank };
-  });
-  const digits = '0123456789';
-  let lastQ = -1;
-  ScrollTrigger.create({
-    trigger: trace, start: 'top 70%', end: 'bottom 20%', scrub: true,
-    onUpdate: (st) => {
-      const q = Math.round(st.progress * 60);
-      if (q === lastQ) return;
-      lastQ = q;
-      const p = st.progress * 1.15;
-      tl.forEach(({ el, text, rank }, li) => {
-        const local = gsap.utils.clamp(0, 1, p * 1.3 - li * 0.15);
-        let html = '';
-        [...text].forEach((ch, i) => {
-          if (ch === ' ' || rank[i] >= local) { html += ch === '<' ? '&lt;' : ch; return; }
-          const d = digits[(i * 7 + li * 3 + q) % 10];
-          html += `<span class="n">${i % 5 === 0 ? '.' : d}</span>`;
-        });
-        el.innerHTML = html;
-      });
-    },
-  });
-}
-
 // ---------------------------------------------------------------- per-frame bookkeeping
 const onScroll = () => { updateNav(); updateZone(); if (rvIO) rvSettle(); };
 if (lenis) lenis.on('scroll', onScroll); else addEventListener('scroll', onScroll, { passive: true });
 let rvResizeT = 0;
-addEventListener('resize', () => { lastZone = ''; onScroll(); clearTimeout(rvResizeT); rvResizeT = window.setTimeout(() => { rvRebuild(); slideStops(); }, 400); });
+addEventListener('resize', () => { lastZone = ''; onScroll(); dust?.invalidate(); clearTimeout(rvResizeT); rvResizeT = window.setTimeout(() => { rvRebuild(); slideStops(); }, 400); });
 onScroll();
 slideStops();
 document.fonts?.ready.then(slideStops);
@@ -548,7 +544,11 @@ if (!reduced) {
   rvStart();
   if (fieldTrigger) applyFields();
   if (asiSec.classList.contains('pinned-asi')) applyAsi();
+  document.fonts?.ready.then(() => dust?.invalidate());
+  addEventListener('load', rvSettle);
 }
+// triggers for effects were created before the pins above them; put them back in page order
+ScrollTrigger.sort();
 
 // ---------------------------------------------------------------- boot the particles once the page is idle
 function webgl() { try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch { return false; } }
@@ -564,10 +564,7 @@ async function boot() {
     root.classList.remove('agent-live');
     agent?.dispose(); agent = null;
     unpinFields();
-    ScrollTrigger.getAll().filter((st) => st.trigger === asiSec || st.trigger === halBlock).forEach((st) => st.kill(true));
-    asiSec.classList.remove('pinned-asi');
-    halBlock?.closest('.screen')?.classList.remove('pinned-hal');
-    rvRelease(lines);
+    unpinAsi();
     ScrollTrigger.refresh();
   }, { once: true });
   agent.intro();
@@ -576,10 +573,7 @@ async function boot() {
 }
 const start = () => boot().catch((e) => {
   unpinFields();
-  ScrollTrigger.getAll().filter((st) => st.trigger === asiSec || st.trigger === halBlock).forEach((st) => st.kill(true));
-  asiSec.classList.remove('pinned-asi');
-  halBlock?.closest('.screen')?.classList.remove('pinned-hal');
-  rvRelease(lines);
+  unpinAsi();
   ScrollTrigger.refresh();
   console.warn('particles unavailable; showing the reading layout', e);
 });

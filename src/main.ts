@@ -7,7 +7,8 @@ import Lenis from 'lenis';
 import type { AgentHandle, AgentState } from './agent';
 import { riseLines, stopLinesIn, textLeaves } from './motion/lines';
 import { createDust, type Dust } from './motion/dust';
-import { scrollReveal, autonomyWave } from './motion/fx';
+import { scrollReveal, autonomyWave, fieldRoll, typeLine, countUp, trueFocus, textPressure, neuralese, type Fx } from './motion/fx';
+import { axes, easeInOut } from './motion/split';
 
 gsap.registerPlugin(ScrollTrigger);
 const root = document.documentElement;
@@ -102,11 +103,25 @@ $$<HTMLAnchorElement>('main a[href^="#src-"]').forEach((a) => {
 
 // ---------------------------------------------------------------- section text effects (motion/fx.ts)
 // Found by structure, never by copy. Reduced motion skips all of them: the text is simply there.
+// Effects that belong to a revealed block are registered in fxOf; the reveal parks, plays or finishes
+// them with the block (setRv), so a number or a typed line is never left at a starting frame.
 const defClaim = $('.def__quote > p:first-child');
 const defKey = $('.def__key em');
+const halLine = $('#screen .screen__line');
+const fxOf = new Map<Element, Fx>();
+let hal: ReturnType<typeof typeLine> | null = null;
 if (!reduced) {
   if (defClaim) { defClaim.classList.add('fx-own'); scrollReveal(defClaim); }
   if (defKey) autonomyWave(defKey);
+  if (halLine) { halLine.classList.add('fx-own'); hal = typeLine(halLine); }
+  $$('.stats b').forEach((b) => fxOf.set(b, countUp(b)));
+  const name = $('.foot__name');
+  if (name) fxOf.set(name, textPressure(name));
+  const trace = $('[data-scramble]');
+  if (trace) neuralese(trace);
+  // the verdict's frame measures the split words, so it starts after the reveal has split them (below)
+  const big = $('.verdict__big');
+  if (big) queueMicrotask(() => trueFocus(big));
 }
 
 // ---------------------------------------------------------------- the agent (particles)
@@ -137,15 +152,15 @@ const HAL_RED = '#ff2d1f';
 const halBlock = $('#screen .screen__hal');
 
 // ---------------------------------------------------------------- text reveal
-// Text is set as you read down: display type rises word by word through a mask; body copy rises line
-// by line (motion/lines.ts). Flowing text reveals once; scrolling back finds it already there. The
-// pinned chapters drive their own blocks both ways.
+// Text is set as you read down: display type rises word by word through a mask while Mona Sans opens
+// from condensed to its set width; body copy rises line by line (motion/lines.ts). Flowing text reveals
+// once; scrolling back finds it already there. The pinned chapters drive their own blocks both ways.
 // Targets are found by structure, not by copy. JS only ever adds hidden states, and only to blocks
 // that are off screen, so nothing is lost if this never runs (styles: "text reveal").
 type RvState = 'in' | 'above' | 'below' | 'before' | 'after';
-interface RvItem { el: HTMLElement; st: RvState | ''; ctl: boolean; t: number; kids: HTMLElement[] }
+interface RvItem { el: HTMLElement; st: RvState | ''; ctl: boolean; t: number; kids: HTMLElement[]; fx?: Element[] }
 const RV_GROUP = '.slide, .entry, .terms > div, .endings > div, .verdict__cols > div, .stats > div, .trace, .asi__line--3, .camp, .person, .film';
-const RV_DISPLAY = 'main h1, main h2, .verdict__big, .foot__name, .field__name, .asi__line--1, .asi__line--2, .asi__big, .camp__name, .screen__line, .film__year, .film__title';
+const RV_DISPLAY = 'main h1, main h2, .verdict__big, .asi__line--1, .asi__line--2, .asi__big, .camp__name, .film__year, .film__title, .story__engine';
 const RV_BODY = 'main p, main li, main h3, main h4, main dt, main dd, .chart figcaption, .hero__cue, .foot p, .foot li, .sources';
 const RV_SKIP = '.sr-only, .nav, .fields__index, .fields__skip, .slip__axis, .fx-own';
 const RV_TOP = NAV + 48;
@@ -165,6 +180,7 @@ function splitDisplay(el: HTMLElement) {
   const nodes: Text[] = [];
   while (walk.nextNode()) nodes.push(walk.currentNode as Text);
   let wi = 0;
+  const words: HTMLElement[] = [];
   for (const n of nodes) {
     const frag = document.createDocumentFragment();
     // split on breaking spaces only, so no-break spaces keep their words on one line
@@ -177,8 +193,14 @@ function splitDisplay(el: HTMLElement) {
       w.style.setProperty('--wi', String(Math.min(wi++, 18)));
       w.textContent = part;
       frag.append(w);
+      words.push(w);
     });
     n.replaceWith(frag);
+  }
+  // the story's engine speeds up as it is read: every gap between words is shorter than the last
+  if (el.matches('.story__engine')) {
+    let t = 0;
+    words.forEach((w, i) => { w.style.setProperty('--wd', `${t.toFixed(3)}s`); t += 0.19 * Math.pow(0.8, i); });
   }
   const sr = document.createElement('span');
   sr.className = 'sr-only sr-copy';
@@ -186,6 +208,16 @@ function splitDisplay(el: HTMLElement) {
   el.append(sr);
   el.dataset.rw = '1';
   return true;
+}
+// Each display word keeps its resting width (in em, so it scales with the fluid type) while its glyphs
+// open from condensed to full width inside it: line breaks never move. Measured once fonts are in.
+function lockDisplayWidths() {
+  const words = $$('.rw').filter((w) => !w.closest('.asi__line--2'));
+  root.classList.add('rw-measure');
+  const m = words.map((w) => [w.getBoundingClientRect().width, parseFloat(getComputedStyle(w).fontSize)]);
+  root.classList.remove('rw-measure');
+  words.forEach((w, i) => { if (m[i][0] && m[i][1]) w.style.width = `${(m[i][0] / m[i][1]).toFixed(4)}em`; });
+  root.classList.add('rw-locked');
 }
 
 const rvFlushNow = () => {
@@ -201,16 +233,29 @@ function onArrive(it: RvItem, i: number) {
   const base = secs(it.el, '--rv-base') + i * 0.09;
   const targets = it.kids.length ? it.kids : [it.el];
   targets.forEach((k, ci) => {
-    if (k.classList.contains('rv-d')) return;
+    if (k.classList.contains('rv-d') || k.classList.contains('rv-x')) return;
     textLeaves(k).forEach((leaf, j) => lineBatch.push({ leaf, delay: base + Math.min(ci, 6) * 0.07 + j * 0.05 }));
   });
   if (!lineRaf) lineRaf = requestAnimationFrame(() => { lineRaf = 0; const b = lineBatch; lineBatch = []; riseLines(b); });
+}
+// the block's own effects: parked while it waits, played as it arrives, finished if it was never seen arriving
+function fxRun(it: RvItem, st: RvState, instant: boolean, i: number) {
+  if (!it.fx) it.fx = [...fxOf.keys()].filter((e) => it.el.contains(e));
+  if (!it.fx.length) return;
+  const base = secs(it.el, '--rv-base') + i * 0.09;
+  for (const e of it.fx) {
+    const fx = fxOf.get(e)!;
+    if (st !== 'in') fx.park?.();
+    else if (instant) fx.finish?.();
+    else fx.play?.(base + Math.min(6, Math.max(0, it.kids.findIndex((k) => k.contains(e)))) * 0.07 + 0.2);
+  }
 }
 function setRv(it: RvItem, st: RvState, instant = false, i = 0) {
   if (it.st === st) return;
   it.st = st;
   const el = it.el;
   if (st !== 'in') stopLinesIn(el);
+  fxRun(it, st, instant, i);
   if (instant) { el.classList.add('rv-now'); rvNow.add(el); el.dataset.rv = st; rvFlushNow(); return; }
   el.style.setProperty('--rv-i', String(i));
   el.dataset.rv = st;
@@ -248,7 +293,8 @@ function rvRegister() {
       it.kids = [...el.children].filter((c): c is HTMLElement => c instanceof HTMLElement && !c.classList.contains('sr-only'));
       it.kids.forEach((k, i) => {
         k.style.setProperty('--ci', String(Math.min(i, 6)));
-        k.classList.add(k.matches(RV_DISPLAY) && splitDisplay(k) ? 'rv-d' : 'rv-c');
+        // field names are set by their own roll (fieldRoll), in step with the particle morph
+        k.classList.add(roll && k.matches('.field__name') ? 'rv-x' : k.matches(RV_DISPLAY) && splitDisplay(k) ? 'rv-d' : 'rv-c');
       });
     } else if (el.matches(RV_DISPLAY) && splitDisplay(el)) el.classList.add('rv-d');
     else el.classList.add('rv-b');
@@ -281,9 +327,15 @@ function rvStateOf(r: DOMRectReadOnly, H: number, W: number, pad = 0): RvState {
 }
 // only text still ahead of the reader (below, or to the right on the sideways track) is ever hidden
 const ahead = (st: RvState) => st === 'below' || st === 'after';
+// HAL's line is typed first; the notes under it wait for it
+const halWait: RvItem[] = [];
+const gated = (it: RvItem) => !!hal && !hal.done && !!halBlock?.contains(it.el) && !it.el.matches('h2');
 function arrive(list: RvItem[]) {
   let i = 0;
-  for (const it of list) setRv(it, 'in', false, Math.min(i++, 8));
+  for (const it of list) {
+    if (gated(it)) { if (!halWait.includes(it)) halWait.push(it); hal!.play(); continue; }
+    setRv(it, 'in', false, Math.min(i++, 8));
+  }
 }
 function rvObserve(entries: IntersectionObserverEntry[]) {
   const H = innerHeight, W = innerWidth;
@@ -311,6 +363,11 @@ function rvObserve(entries: IntersectionObserverEntry[]) {
 // of the page could otherwise never cross into the band; blocks passed unseen are shown off screen.
 function rvCheck() {
   const H = innerHeight, W = innerWidth;
+  // HAL's line: passed before it was typed, it is simply there when you look back; met from below, it types
+  if (hal && !hal.done && halLine) {
+    const r = halLine.getBoundingClientRect();
+    if (r.bottom < RV_TOP) hal.skip(); else if (r.top < H * 0.8 && r.bottom > 0) hal.play();
+  }
   const arriving: RvItem[] = [];
   for (const it of rvMap.values()) {
     if (it.ctl || !it.st || it.st === 'in') continue;
@@ -355,6 +412,11 @@ const ticks = $$<HTMLButtonElement>('.fields__index button', fieldsSec);
 let fieldsP = 0;
 let fieldTrigger: ScrollTrigger | null = null;
 let activeSlide = -1;
+// field names roll in with the particle morph (motion/fx.ts fieldRoll); intro and outro have no name
+const fieldNames = $$('.field__name', fieldsSec);
+const nameOf = slides.map((s) => { const h = $('.field__name', s); return h ? fieldNames.indexOf(h) : -1; });
+let roll: ReturnType<typeof fieldRoll> | null = null;
+let rollFrom = -1;
 const applyFields = () => {
   const p = fieldsP * (slides.length - 1);
   const k = Math.min(slides.length - 2, Math.floor(p));
@@ -365,6 +427,7 @@ const applyFields = () => {
     const roving = gsap.utils.clamp(1, ticks.length, active) - 1;
     // keyboard focus in the outgoing field moves to the incoming field's index button
     handOff(slides[activeSlide], ticks[roving] ?? slides[active]);
+    rollFrom = nameOf[activeSlide] ?? -1;
     activeSlide = active;
     slides.forEach((s, i) => s.classList.toggle('is-active', i === active));
     ticks.forEach((b, i) => {
@@ -374,6 +437,8 @@ const applyFields = () => {
   }
   meter?.style.setProperty('--p', String(fieldsP));
   slides.forEach((s, i) => rvSet(s, i === active ? 'in' : i < active ? 'above' : 'below'));
+  // the incoming name starts rolling at the switch and has landed by the time the object has formed
+  roll?.set(nameOf[active], rollFrom, gsap.utils.clamp(0, 1, ((active === k + 1 ? mix : 1 - mix) - 0.5) / 0.5));
   setAgent({ from: shapesOf[k], to: shapesOf[k + 1], mix, scatter: 0, dim: 1, ...place.fields() });
 };
 const jumpToSlide = (i: number, immediate = false) => {
@@ -402,6 +467,7 @@ const unpinFields = () => {
   fieldTrigger?.kill(true); fieldTrigger = null;
   fieldsSec.classList.remove('pinned');
   fieldsSec.dataset.agent = 'off';
+  roll?.reset(); roll = null;
   rvRelease(slides);
   slideStops();
 };
@@ -421,6 +487,7 @@ function slideStops() {
 // ---------------------------------------------------------------- not a god: snap
 const asiSec = $('#asi')!;
 const lines = $$('.asi__line', asiSec);
+const asiStrong = $('.asi__line--2 strong', asiSec);
 let asiP = 0;
 let dust: Dust | null = null;
 const unpinAsi = () => {
@@ -428,6 +495,7 @@ const unpinAsi = () => {
   asiSec.classList.remove('pinned-asi');
   halBlock?.closest('.screen')?.classList.remove('pinned-hal');
   dust?.destroy(); dust = null;
+  asiStrong?.style.removeProperty('font-variation-settings');
   rvRelease(lines);
 };
 const applyAsi = () => {
@@ -436,6 +504,12 @@ const applyAsi = () => {
   lines.forEach((l, j) => { l.classList.toggle('is-active', j === i); rvSet(l, j === i ? 'in' : j < i ? 'above' : 'below'); });
   // "in a snap." turns to dust just before the agent does, and re-forms on the way back
   dust?.update(gsap.utils.clamp(0, 1, (asiP - 0.13) / 0.27));
+  // "That's ASI." swells to the font's widest, heaviest cut once it has condensed out of the dust
+  if (asiStrong && dust) {
+    const s = easeInOut(gsap.utils.clamp(0, 1, (asiP - 0.37) / 0.15));
+    if (s > 0.001) asiStrong.style.fontVariationSettings = axes(112 + 13 * s, 800 + 100 * s);
+    else asiStrong.style.removeProperty('font-variation-settings');
+  }
   const base = place.asi();
   if (i === 0) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...base });
   else if (i === 1) setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: gsap.utils.clamp(0, 1, (asiP - 0.3) / 0.16), dim: 1, ...base });
@@ -445,6 +519,7 @@ const applyAsi = () => {
 if (canAnimate) {
   root.classList.add('pinned-on');
   fieldsSec.classList.add('pinned');
+  if (!reduced) roll = fieldRoll(fieldNames);
   fieldTrigger = ScrollTrigger.create({
     trigger: fieldsSec, pin: $('.fields__pin', fieldsSec), start: 'top top', end: () => `+=${innerHeight * (slides.length - 1) * 0.85}`,
     scrub: true, onUpdate: (st) => { fieldsP = st.progress; applyFields(); },
@@ -529,6 +604,12 @@ const updateZone = () => {
 
 // ---------------------------------------------------------------- chart: bars draw each time their row is revealed (styles: .slip li[data-rv])
 
+// ---------------------------------------------------------------- HAL types his line once the eye has formed
+if (hal && halBlock && halLine) {
+  hal.whenDone(() => arrive(halWait.splice(0)));
+  ScrollTrigger.create({ trigger: halLine, start: 'top 88%', once: true, onEnter: () => hal!.arm() });
+  ScrollTrigger.create({ trigger: halBlock, start: 'top 30%', once: true, onEnter: () => hal!.play() });
+}
 // ---------------------------------------------------------------- per-frame bookkeeping
 const onScroll = () => { updateNav(); updateZone(); if (rvIO) rvSettle(); };
 if (lenis) lenis.on('scroll', onScroll); else addEventListener('scroll', onScroll, { passive: true });
@@ -544,7 +625,7 @@ if (!reduced) {
   rvStart();
   if (fieldTrigger) applyFields();
   if (asiSec.classList.contains('pinned-asi')) applyAsi();
-  document.fonts?.ready.then(() => dust?.invalidate());
+  document.fonts?.ready.then(() => { lockDisplayWidths(); dust?.invalidate(); });
   addEventListener('load', rvSettle);
 }
 // triggers for effects were created before the pins above them; put them back in page order

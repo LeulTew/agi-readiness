@@ -12,6 +12,8 @@ export interface AgentState {
   x: number; y: number; // offset as fraction of half viewport (-1..1)
   scale: number; // 1 = fits ~42% of the short side
   dim: number; // 0..1 opacity multiplier
+  color: string; // particle colour (hex); tweened
+  heat: number; // 0..1 how strongly the centre of the shape glows hotter (HAL's pinpoint)
 }
 
 const vert = /* glsl */`
@@ -20,7 +22,9 @@ const vert = /* glsl */`
   attribute vec4 aR;
   uniform float uMix, uTime, uSize, uScatter, uPR, uPush;
   uniform vec3 uMouse;
+  uniform float uHeat;
   varying float vAlpha;
+  varying float vHeat;
   void main() {
     float h = aR.y;
     float t = clamp((uMix - h * 0.35) / 0.65, 0.0, 1.0);
@@ -49,16 +53,19 @@ const vert = /* glsl */`
     gl_PointSize = uSize * (0.55 + aR.x * 0.9) * uPR / -mv.z;
     float depth = clamp((-mv.z - 3.2) / 3.0, 0.0, 1.0);
     vAlpha = (1.0 - s * 0.22) * mix(1.0, 0.65, depth) * (0.72 + 0.28 * aR.x);
+    vHeat = uHeat * smoothstep(0.26, 0.0, length(p.xy)) * (1.0 - s);
   }`;
 
 const frag = /* glsl */`
   uniform vec3 uColor;
+  uniform vec3 uHot;
   uniform float uOpacity;
   varying float vAlpha;
+  varying float vHeat;
   void main() {
     float r = length(gl_PointCoord - 0.5);
     if (r > 0.5) discard;
-    gl_FragColor = vec4(uColor, smoothstep(0.5, 0.22, r) * vAlpha * uOpacity);
+    gl_FragColor = vec4(mix(uColor, uHot, vHeat), smoothstep(0.5, 0.22, r) * vAlpha * uOpacity);
   }`;
 
 export interface AgentHandle {
@@ -71,6 +78,7 @@ export interface AgentHandle {
 // Ambient drift only runs while the reader is doing something, then eases to rest,
 // so nothing moves on its own for more than a few seconds (WCAG 2.2.2).
 const IDLE_MS = 2500;
+const HOT = '#ffd9a0'; // HAL's pinpoint: the centre of the red eye burns towards white-gold
 
 export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string; reducedMotion: boolean; count: number }): Promise<AgentHandle> {
   const renderer = new WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: 'high-performance' });
@@ -95,7 +103,7 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     if (g.index) g = g.toNonIndexed();
     const mesh = new Mesh(g);
     const sampler = Object.assign(new MeshSurfaceSampler(mesh), { randomFunction: random }).build();
-    const yaw = ({ photography: -0.24, architecture: -0.18, software: 0, philosophy: 0 } as Record<string, number>)[m.name] ?? -0.1;
+    const yaw = ({ photography: -0.24, architecture: -0.18, software: 0, philosophy: 0, hal: 0 } as Record<string, number>)[m.name] ?? -0.1;
     const angle = new Euler(0.04, yaw, 0);
     const pts: [number, number, number][] = [];
     for (let i = 0; i < N; i++) {
@@ -132,6 +140,7 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     uniforms: {
       uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 11 }, uScatter: { value: 1 }, uPR: { value: pr },
       uPush: { value: 0 }, uMouse: { value: new Vector3(99, 99, 0) }, uColor: { value: new Color('#ffffff') }, uOpacity: { value: 1 },
+      uHot: { value: new Color(HOT) }, uHeat: { value: 0 },
     },
   });
   const points = new Points(geo, mat);
@@ -140,8 +149,9 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
   group.add(points);
   scene.add(group);
 
-  const target: AgentState = { from: 'agent', to: 'agent', mix: 0, scatter: 0, x: 0.28, y: 0.02, scale: 1, dim: 1 };
-  const cur = { mix: 0, scatter: opts.reducedMotion ? 0 : 1, x: target.x, y: target.y, scale: 1, dim: 1 };
+  const target: AgentState = { from: 'agent', to: 'agent', mix: 0, scatter: 0, x: 0.28, y: 0.02, scale: 1, dim: 1, color: '#ffffff', heat: 0 };
+  const cur = { mix: 0, scatter: opts.reducedMotion ? 0 : 1, x: target.x, y: target.y, scale: 1, dim: 1, heat: 0 };
+  const curColor = new Color(target.color), goalColor = new Color(target.color);
   let pair = 'agent>agent';
   let active = true;
   const moving = !opts.reducedMotion;
@@ -205,7 +215,14 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     cur.y += (target.y - cur.y) * k * 0.8;
     cur.scale += (target.scale - cur.scale) * k * 0.8;
     cur.dim += (target.dim - cur.dim) * k;
+    // colour and heat ease a little slower than the shape, so a recolour reads as the glow warming up
+    const kc = opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 3.2);
+    goalColor.set(target.color);
+    curColor.lerp(goalColor, kc);
+    cur.heat += (target.heat - cur.heat) * kc;
     const u = mat.uniforms;
+    (u.uColor.value as Color).copy(curColor);
+    u.uHeat.value = cur.heat;
     u.uMix.value = cur.mix; u.uScatter.value = cur.scatter; u.uTime.value = time; u.uOpacity.value = cur.dim;
     u.uPush.value += (pushTarget - u.uPush.value) * k;
     (u.uMouse.value as Vector3).copy(mouse);
@@ -216,7 +233,9 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     group.rotation.x = Math.sin(time * 0.17) * 0.035;
     u.uSize.value = innerWidth < 820 ? 8.5 : 10.5;
     renderer.render(scene, camera);
-    const unsettled = (['mix', 'scatter', 'x', 'y', 'scale', 'dim'] as const).some((key) => Math.abs(cur[key] - target[key]) > 0.001)
+    const colorGap = Math.abs(curColor.r - goalColor.r) + Math.abs(curColor.g - goalColor.g) + Math.abs(curColor.b - goalColor.b);
+    const unsettled = (['mix', 'scatter', 'x', 'y', 'scale', 'dim', 'heat'] as const).some((key) => Math.abs(cur[key] - target[key]) > 0.001)
+      || colorGap > 0.003
       || Math.abs(u.uPush.value - pushTarget) > 0.002;
     dirty = unsettled;
     if (flow > 0 || dirty) schedule();

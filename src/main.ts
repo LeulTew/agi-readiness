@@ -116,7 +116,15 @@ const place = {
   hero: () => (mobile() ? { x: 0, y: 0.4, scale: 1 } : { x: 0.56, y: 0.32, scale: 0.77 }),
   fields: () => (mobile() ? band(slides[1], 1.06) : { x: 0.47, y: 0.13, scale: 0.96 }),
   asi: () => (mobile() ? band(lines[0], 0.94) : { x: 0.5, y: 0.16, scale: 0.82 }),
+  // HAL's eye: right of the text on wide screens, in the same top band as the pinned chapters on phones
+  hal: () => {
+    if (!mobile()) return { x: 0.5, y: -0.02, scale: 0.94 };
+    const stage = Math.min(368, Math.max(232, innerHeight * 0.42));
+    return { x: 0, y: 1 - (2 * (NAV + stage / 2)) / innerHeight, scale: Math.min(1.2, (stage - 28) / (0.62 * Math.min(innerWidth, innerHeight))) };
+  },
 };
+const HAL_RED = '#ff2d1f';
+const halBlock = $('#screen .screen__hal');
 
 // ---------------------------------------------------------------- text reveal
 // Text blocks animate in each time they enter the reading band and out when they leave it, in both
@@ -124,8 +132,8 @@ const place = {
 // hidden states, and only to blocks that are off screen, so nothing is lost if this never runs.
 type RvState = 'in' | 'above' | 'below' | 'before' | 'after';
 interface RvItem { el: HTMLElement; st: RvState | ''; ctl: boolean; t: number; kids: HTMLElement[] }
-const RV_GROUP = '.slide, .entry, .terms > div, .endings > div, .verdict__cols > div, .stats > div, .trace, .asi__line--3';
-const RV_DISPLAY = 'main h1, main h2, .verdict__big, .foot__name, .field__name, .asi__line--1, .asi__line--2, .asi__big';
+const RV_GROUP = '.slide, .entry, .terms > div, .endings > div, .verdict__cols > div, .stats > div, .trace, .asi__line--3, .camp, .person, .film';
+const RV_DISPLAY = 'main h1, main h2, .verdict__big, .foot__name, .field__name, .asi__line--1, .asi__line--2, .asi__big, .camp__name, .screen__line, .film__year, .film__title';
 const RV_BODY = 'main p, main li, main h3, main h4, main dt, main dd, .chart figcaption, .hero__cue, .foot p, .foot li, .sources';
 const RV_SKIP = '.sr-only, .nav, .fields__index, .fields__skip, .slip__axis';
 const RV_TOP = NAV + 48; // blocks leave just below the nav, so the exit is seen
@@ -225,7 +233,12 @@ function rvRegister() {
     const ctl = el.matches('.pinned .slide, .pinned-asi .asi__line');
     // a group taller than most of the screen would finish its cascade off screen: reveal its parts one by one
     if (!ctl && el.matches(RV_GROUP) && el.offsetHeight > innerHeight * 0.75) {
-      [...el.children].forEach((c) => { if (c instanceof HTMLElement && !c.classList.contains('sr-only')) add(c, false); });
+      [...el.children].forEach((c) => {
+        if (!(c instanceof HTMLElement) || c.classList.contains('sr-only')) return;
+        // a list inside a tall group reveals item by item (e.g. the people under a camp)
+        if (c.matches('ul, ol')) [...c.children].forEach((li) => { if (li instanceof HTMLElement) add(li, false); });
+        else add(c, false);
+      });
       continue;
     }
     add(el, ctl);
@@ -399,6 +412,11 @@ if (canAnimate) {
     onToggle: (st) => { if (st.isActive) applyAsi(); },
   });
   applyAsi();
+  // HAL holds the screen for a beat, so the eye and its line are read together
+  if (halBlock) {
+    halBlock.closest('.screen')?.classList.add('pinned-hal');
+    ScrollTrigger.create({ trigger: halBlock, pin: halBlock, start: 'top top', end: () => `+=${Math.round(innerHeight * 0.8)}` });
+  }
 
   // reality check scrolls sideways on wide screens
   const mm = gsap.matchMedia();
@@ -432,12 +450,24 @@ const updateZone = () => {
   const mid = innerHeight * 0.5;
   let zone = 'off';
   for (const s of agentSecs) { const r = s.getBoundingClientRect(); if (r.top <= mid && r.bottom > mid) { zone = s.dataset.agent!; break; } }
+  // HAL's eye takes over as soon as its block shows below the paper section, not only past mid-screen
+  const halRect = halBlock?.getBoundingClientRect();
+  const halOn = !!halRect && halRect.bottom > 0 && halRect.top < innerHeight;
+  if (halOn) zone = 'hal';
   const paperOnTop = $$('.s-paper, .foot').some((s) => { const r = s.getBoundingClientRect(); return r.top <= 0 && r.bottom >= innerHeight; });
-  agent?.setActive(!paperOnTop && (zone === 'hero' || zone === 'fields' || zone === 'asi'));
-  if (zone === lastZone && zone !== 'hero' && zone !== 'verdict') return;
+  agent?.setActive(!paperOnTop && (zone === 'hero' || zone === 'fields' || zone === 'asi' || (zone === 'hal' && halOn)));
+  if (zone === lastZone && zone !== 'hero' && zone !== 'verdict' && zone !== 'hal') return;
   lastZone = zone;
   if (reduced && zone !== 'hero') { setAgent({ dim: 0 }); return; }
-  if (zone === 'hero') setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero() });
+  if (zone !== 'hal') setAgent({ color: '#ffffff', heat: 0 });
+  if (zone === 'hal') {
+    if (!halOn || !halRect) { setAgent({ dim: 0 }); return; }
+    const H = innerHeight;
+    // forms as the block rises into view; fades before the reel (or, on phones, the block's own text) reaches it
+    const enter = gsap.utils.clamp(0, 1, (H - halRect.top) / (H * 0.75));
+    const exit = mobile() ? gsap.utils.clamp(0, 1, 1 + halRect.top / (H * 0.14)) : gsap.utils.clamp(0, 1, (halRect.bottom - H * 0.72) / (H * 0.28));
+    setAgent({ from: 'agent', to: 'hal', mix: enter, scatter: 0, dim: exit, color: HAL_RED, heat: 1, ...place.hal() });
+  } else if (zone === 'hero') setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero() });
   else if (zone === 'verdict') setAgent({ dim: 0 });
   else if (zone === 'fields') applyFields();
   else if (zone === 'asi') applyAsi();
@@ -510,8 +540,9 @@ async function boot() {
     root.classList.remove('agent-live');
     agent?.dispose(); agent = null;
     unpinFields();
-    ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
+    ScrollTrigger.getAll().filter((st) => st.trigger === asiSec || st.trigger === halBlock).forEach((st) => st.kill(true));
     asiSec.classList.remove('pinned-asi');
+    halBlock?.closest('.screen')?.classList.remove('pinned-hal');
     rvRelease(lines);
     ScrollTrigger.refresh();
   }, { once: true });
@@ -521,8 +552,9 @@ async function boot() {
 }
 const start = () => boot().catch((e) => {
   unpinFields();
-  ScrollTrigger.getAll().filter((st) => st.trigger === asiSec).forEach((st) => st.kill(true));
+  ScrollTrigger.getAll().filter((st) => st.trigger === asiSec || st.trigger === halBlock).forEach((st) => st.kill(true));
   asiSec.classList.remove('pinned-asi');
+  halBlock?.closest('.screen')?.classList.remove('pinned-hal');
   rvRelease(lines);
   ScrollTrigger.refresh();
   console.warn('particles unavailable; showing the reading layout', e);

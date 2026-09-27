@@ -323,6 +323,41 @@ rimo = apply_all(rim)
 made.append(normalize(join([reel, hub], "video")))
 bpy.data.objects.remove(rimo)
 
+
+# ---------------------------------------------------------------- hal: HAL 9000's eye, facing the viewer (-Y)
+# Sampled as points, density follows surface area: a bright bezel, an empty dark lens,
+# iris rings that thin out towards the edge of the glow, and a stacked, very dense core.
+def annulus(r0, r1, y, segs=160):
+    bm = bmesh.new()
+    if r0 <= 0:
+        c = bm.verts.new((0, y, 0))
+        ring = [bm.verts.new((math.cos(a) * r1, y, math.sin(a) * r1)) for a in (k * math.tau / segs for k in range(segs))]
+        for k in range(segs):
+            bm.faces.new((c, ring[k], ring[(k + 1) % segs]))
+    else:
+        inner = [bm.verts.new((math.cos(a) * r0, y, math.sin(a) * r0)) for a in (k * math.tau / segs for k in range(segs))]
+        outer = [bm.verts.new((math.cos(a) * r1, y, math.sin(a) * r1)) for a in (k * math.tau / segs for k in range(segs))]
+        for k in range(segs):
+            j = (k + 1) % segs
+            bm.faces.new((inner[k], outer[k], outer[j], inner[j]))
+    bm.normal_update()
+    for f in bm.faces:
+        if f.normal.y > 0:
+            f.normal_flip()  # every face looks at the viewer, so the sampler's front bias keeps density even
+    me = bpy.data.meshes.new("ring"); bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new("ring", me); scene.collection.objects.link(o)
+    return o
+
+
+parts = [annulus(0.93, 1.0, -0.07), annulus(0.82, 0.845, -0.035)]
+# the red glow: stacked full discs, so point density (and brightness) climbs smoothly towards the centre,
+# with a black gap of empty lens between the glow and the chrome bezel
+for k, r in enumerate([0.64, 0.5, 0.38, 0.28, 0.19, 0.12, 0.08]):
+    parts.append(annulus(0, r, -0.02 - k * 0.012, segs=128))
+bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.06, location=(0, -0.1, 0))
+parts.append(active())
+made.append(normalize(join(parts, "hal")))
+
 # drop stray helpers
 for o in list(scene.objects):
     if o not in made:
@@ -356,6 +391,7 @@ for i, name in enumerate(order):
     o.rotation_euler = (math.radians(12), 0, math.radians(-24))
     o.scale = (0.56, 0.56, 0.56)
 byname["agent"].hide_render = True
+byname["hal"].hide_render = True
 
 w = bpy.data.worlds.new("W"); scene.world = w
 w.use_nodes = True

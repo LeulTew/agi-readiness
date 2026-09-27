@@ -63,6 +63,8 @@ const nav = $('[data-nav]')!;
 const themed = $$('[data-theme]');
 const navLinks = $$<HTMLAnchorElement>('.nav nav a');
 const navIds = navLinks.map((a) => a.hash.slice(1));
+// sections that start a chapter of their own without a nav item; inside them no nav item is current
+const navChapters = [...navIds, 'screen'].map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
 const updateNav = () => {
   const y = 32;
   let theme = 'blue';
@@ -71,9 +73,29 @@ const updateNav = () => {
   nav.classList.toggle('is-scrolled', scrollY > 40);
   const mid = innerHeight * 0.45;
   let current = '';
-  for (const id of navIds) { const el = document.getElementById(id); if (el && el.getBoundingClientRect().top <= mid) current = id; }
+  let best = -Infinity;
+  for (const el of navChapters) { const t = el.getBoundingClientRect().top; if (t <= mid && t > best) { best = t; current = el.id; } }
   navLinks.forEach((a) => (a.hash === `#${current}` ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')));
 };
+
+// ---------------------------------------------------------------- citation clusters
+// neighbouring citations ("[29] [33] [56]") are wrapped together so a cluster wraps as one unit; text is untouched
+const isCite = (n: Node | null): n is HTMLAnchorElement => n instanceof HTMLAnchorElement && n.hash.startsWith('#src-');
+$$<HTMLAnchorElement>('main a[href^="#src-"]').forEach((a) => {
+  if (a.parentElement?.classList.contains('cites')) return;
+  const group: Node[] = [a];
+  let n = a.nextSibling;
+  while (n && n.nodeType === Node.TEXT_NODE && !/\S/.test(n.textContent || '') && isCite(n.nextSibling)) {
+    const next = n.nextSibling;
+    group.push(n, next);
+    n = next.nextSibling;
+  }
+  if (group.length < 3) return;
+  const span = document.createElement('span');
+  span.className = 'cites';
+  a.before(span);
+  span.append(...group);
+});
 
 // ---------------------------------------------------------------- word-by-word reveal
 function splitWords(el: HTMLElement) {

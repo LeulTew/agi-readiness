@@ -214,7 +214,8 @@ h1, h2, h3 { text-wrap: balance; }
 /* ---------------------------------------------------------------- camps: the spectrum, from stop to succession
    Every camp row carries the whole axis (ink = human-first, ultramarine = the machine's colour) with its own
    station filled, and the row's content sits at the same fraction along the width, so the list reads as a
-   walk from one end of the argument to the other. Station positions come from data-camp, not from order. */
+   walk from one end of the argument to the other. Station positions come from data-camp, not from order.
+   The last leg, to succession, is dashed and its station hollow: it answers who stays in charge, not how fast. */
 .camps { padding: clamp(6rem, 14vh, 10rem) 0; }
 .camps .lead { margin-top: 1.6rem; max-width: 46ch; color: #2d2d2a; }
 .spectrum { --w: min(100%, 44rem); list-style: none; margin: clamp(3.5rem, 9vh, 6.5rem) 0 0; padding: 0; }
@@ -229,7 +230,8 @@ h1, h2, h3 { text-wrap: balance; }
 .camp::before {
   content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; margin-top: -6px; pointer-events: none; transform-origin: left center;
   background:
-    linear-gradient(90deg, var(--ink), var(--blue)) 0 50% / 100% 2px no-repeat,
+    linear-gradient(90deg, var(--ink), color-mix(in oklab, var(--ink), var(--blue) 75%)) 0 50% / 75% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--blue) 0 7px, transparent 7px 13px) 100% 50% / 25% 2px no-repeat,
     linear-gradient(rgba(11, 11, 15, .32), rgba(11, 11, 15, .32)) 0 50% / 1px 14px no-repeat,
     linear-gradient(rgba(11, 11, 15, .32), rgba(11, 11, 15, .32)) 25% 50% / 1px 14px no-repeat,
     linear-gradient(rgba(11, 11, 15, .32), rgba(11, 11, 15, .32)) 50% 50% / 1px 14px no-repeat,
@@ -237,16 +239,20 @@ h1, h2, h3 { text-wrap: balance; }
     linear-gradient(rgba(11, 11, 15, .32), rgba(11, 11, 15, .32)) 100% 50% / 1px 14px no-repeat;
 }
 .camp::after { content: ''; position: absolute; top: -10px; left: calc(var(--x) * (100% - 20px)); width: 20px; height: 20px; border-radius: 50%; background: var(--dot); box-shadow: 0 0 0 5px var(--paper); pointer-events: none; }
+.camp[data-camp='succession']::after { background: var(--paper); box-shadow: inset 0 0 0 3px var(--dot), 0 0 0 5px var(--paper); }
 .camp__name { font: 800 clamp(2rem, 1rem + 2.8vw, 3.6rem)/.95 var(--f); font-stretch: 118%; letter-spacing: -.035em; color: var(--dot); }
 .camp__gist { margin-top: 1rem; max-width: 40ch; font-size: var(--t-lead); line-height: 1.42; color: #2d2d2a; }
 .camp__people { list-style: none; margin: clamp(1.8rem, 4vh, 2.6rem) 0 0; padding: 0; display: grid; gap: clamp(1.8rem, 4vh, 2.6rem); }
-.person__name { font: 700 .98rem/1.35 var(--f); font-stretch: 106%; }
-.person__role { margin-left: .45rem; font-weight: 450; font-stretch: 100%; color: var(--muted); }
+/* a role that doesn't fit beside the name drops to its own line whole, flush left */
+.person__name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .7rem; font: 700 .98rem/1.35 var(--f); font-stretch: 106%; }
+.person__role { font-weight: 450; font-stretch: 100%; color: var(--muted); }
 .person__quote { margin-top: .5rem; }
 .person__quote p { font: 540 clamp(1.22rem, 1rem + .85vw, 1.7rem)/1.32 var(--f); font-stretch: 102%; letter-spacing: -.016em; color: var(--ink); text-wrap: pretty; }
 .person__src { margin-top: .7rem; font: 500 .72rem/1.5 var(--m); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .camps a[href^='#src-'] { font: 500 1em var(--m); color: var(--blue); text-decoration: none; white-space: nowrap; }
 .camps a[href^='#src-']:hover { text-decoration: underline; }
+/* citation clusters are grouped by main.ts so "[29] [33] [56]" never splits across lines */
+.cites { white-space: nowrap; }
 .camps__fight { margin-top: clamp(4.5rem, 12vh, 8rem); max-width: 32ch; font: 700 clamp(1.6rem, 1rem + 2vw, 2.9rem)/1.12 var(--f); font-stretch: 110%; letter-spacing: -.03em; }
 .camps__note { margin-top: 1.6rem; max-width: 66ch; font-size: .95rem; line-height: 1.55; color: var(--muted); }
 /* the fight and the two records read as a ledger under one rule: the case and the story side by side,
@@ -270,6 +276,12 @@ h1, h2, h3 { text-wrap: balance; }
   .camp { padding: 0; }
   .camp::before { display: none; }
   .camp::after { top: .35em; left: calc(-2.1rem + 1px); width: 18px; height: 18px; box-shadow: 0 0 0 4px var(--paper); }
+  .camp[data-camp='succession']::after { box-shadow: inset 0 0 0 3px var(--dot), 0 0 0 4px var(--paper); }
+  /* the rail turns dashed from the end of "accelerate" down through succession (the id outranks the reveal's scaleX) */
+  #camps .camp[data-camp='succession']::before {
+    display: block; left: calc(9px - 2.1rem); right: auto; top: calc(-1 * clamp(3.2rem, 9vh, 6rem)); bottom: .4rem; width: 2px; height: auto; margin-top: 0;
+    background: repeating-linear-gradient(180deg, var(--blue) 0 7px, var(--paper) 7px 13px); transform: none; transition: none;
+  }
   .camp > * { max-width: none; }
 }
 @media (prefers-reduced-motion: no-preference) {

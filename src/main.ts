@@ -459,14 +459,16 @@ const updateZone = () => {
   if (zone === lastZone && zone !== 'hero' && zone !== 'verdict' && zone !== 'hal') return;
   lastZone = zone;
   if (reduced && zone !== 'hero') { setAgent({ dim: 0 }); return; }
-  if (zone !== 'hal') setAgent({ color: '#ffffff', heat: 0 });
+  if (zone !== 'hal') setAgent({ color: '#ffffff', heat: 0, glue: false });
   if (zone === 'hal') {
     if (!halOn || !halRect) { setAgent({ dim: 0 }); return; }
     const H = innerHeight;
-    // forms as the block rises into view; fades before the reel (or, on phones, the block's own text) reaches it
+    // the eye is anchored to its block: it rises with it, holds while the block is pinned, then leaves with it,
+    // forming from the agent as it arrives and fading as it slides under the nav, so it never meets the reel
+    const at = place.hal();
     const enter = gsap.utils.clamp(0, 1, (H - halRect.top) / (H * 0.75));
-    const exit = mobile() ? gsap.utils.clamp(0, 1, 1 + halRect.top / (H * 0.14)) : gsap.utils.clamp(0, 1, (halRect.bottom - H * 0.72) / (H * 0.28));
-    setAgent({ from: 'agent', to: 'hal', mix: enter, scatter: 0, dim: exit, color: HAL_RED, heat: 1, ...place.hal() });
+    const exit = gsap.utils.clamp(0, 1, 1 + halRect.top / (H * (mobile() ? 0.24 : 0.42)));
+    setAgent({ from: 'agent', to: 'hal', mix: enter, scatter: 0, dim: exit, color: HAL_RED, heat: 1, glue: true, ...at, y: at.y - (2 * halRect.top) / H });
   } else if (zone === 'hero') setAgent({ from: 'agent', to: 'agent', mix: 1, scatter: 0, dim: 1, ...place.hero() });
   else if (zone === 'verdict') setAgent({ dim: 0 });
   else if (zone === 'fields') applyFields();

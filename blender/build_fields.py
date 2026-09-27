@@ -350,12 +350,13 @@ def annulus(r0, r1, y, segs=160):
 
 
 parts = [annulus(0.93, 1.0, -0.07), annulus(0.82, 0.845, -0.035)]
-# the red glow: stacked full discs, so point density (and brightness) climbs smoothly towards the centre,
-# with a black gap of empty lens between the glow and the chrome bezel
-for k, r in enumerate([0.64, 0.5, 0.38, 0.28, 0.19, 0.12, 0.08]):
+# the red glow: stacked full discs. Each disc adds the same point density inside its radius (samples follow
+# area), so density steps up towards the centre; the black gap of empty lens separates glow from bezel
+for k, r in enumerate([0.62, 0.44, 0.3, 0.2, 0.13]):
     parts.append(annulus(0, r, -0.02 - k * 0.012, segs=128))
-bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=0.06, location=(0, -0.1, 0))
-parts.append(active())
+# the pinpoint: many tiny discs stacked at the centre, so the core is an order of magnitude denser than the glow
+for k in range(14):
+    parts.append(annulus(0, 0.045 if k < 10 else 0.075, -0.09 - k * 0.002, segs=48))
 made.append(normalize(join(parts, "hal")))
 
 # drop stray helpers

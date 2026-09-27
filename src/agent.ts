@@ -14,6 +14,7 @@ export interface AgentState {
   dim: number; // 0..1 opacity multiplier
   color: string; // particle colour (hex); tweened
   heat: number; // 0..1 how strongly the centre of the shape glows hotter (HAL's pinpoint)
+  glue: boolean; // true = follow x/y/scale exactly (the shape is anchored to scrolling content)
 }
 
 const vert = /* glsl */`
@@ -53,7 +54,7 @@ const vert = /* glsl */`
     gl_PointSize = uSize * (0.55 + aR.x * 0.9) * uPR / -mv.z;
     float depth = clamp((-mv.z - 3.2) / 3.0, 0.0, 1.0);
     vAlpha = (1.0 - s * 0.22) * mix(1.0, 0.65, depth) * (0.72 + 0.28 * aR.x);
-    vHeat = uHeat * smoothstep(0.26, 0.0, length(p.xy)) * (1.0 - s);
+    vHeat = uHeat * smoothstep(0.15, 0.0, length(p.xy)) * (1.0 - s);
   }`;
 
 const frag = /* glsl */`
@@ -149,7 +150,7 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
   group.add(points);
   scene.add(group);
 
-  const target: AgentState = { from: 'agent', to: 'agent', mix: 0, scatter: 0, x: 0.28, y: 0.02, scale: 1, dim: 1, color: '#ffffff', heat: 0 };
+  const target: AgentState = { from: 'agent', to: 'agent', mix: 0, scatter: 0, x: 0.28, y: 0.02, scale: 1, dim: 1, color: '#ffffff', heat: 0, glue: false };
   const cur = { mix: 0, scatter: opts.reducedMotion ? 0 : 1, x: target.x, y: target.y, scale: 1, dim: 1, heat: 0 };
   const curColor = new Color(target.color), goalColor = new Color(target.color);
   let pair = 'agent>agent';
@@ -211,9 +212,10 @@ export async function createAgent(canvas: HTMLCanvasElement, opts: { url: string
     }
     cur.mix += (target.mix - cur.mix) * k;
     cur.scatter += (target.scatter - cur.scatter) * (opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 2.6));
-    cur.x += (target.x - cur.x) * k * 0.8;
-    cur.y += (target.y - cur.y) * k * 0.8;
-    cur.scale += (target.scale - cur.scale) * k * 0.8;
+    const kp = target.glue ? 1 : k * 0.8;
+    cur.x += (target.x - cur.x) * kp;
+    cur.y += (target.y - cur.y) * kp;
+    cur.scale += (target.scale - cur.scale) * kp;
     cur.dim += (target.dim - cur.dim) * k;
     // colour and heat ease a little slower than the shape, so a recolour reads as the glow warming up
     const kc = opts.reducedMotion ? 1 : 1 - Math.exp(-dt * 3.2);

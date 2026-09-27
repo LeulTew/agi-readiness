@@ -110,9 +110,10 @@ const defKey = $('.def__key em');
 const halLine = $('#screen .screen__line');
 const fxOf = new Map<Element, Fx>();
 let hal: ReturnType<typeof typeLine> | null = null;
-// field counts roll from the field you came from (fieldPrev is set by applyFields before the switch)
+// field counts roll from the field you came from (fieldPrev is set by applyFields before the switch);
+// every count is kept as a plain string, so a count that is still rolling can't feed the next one
 let fieldPrev = -1;
-const countOf = (s: HTMLElement | undefined) => (s ? $('.fc-n', s)?.textContent ?? null : null);
+const countText = new Map<Element, string>();
 if (!reduced) {
   // reality-check statuses are stamped as a whole (styles), so their words don't rise on their own
   $$('.entry__status').forEach((s) => s.classList.add('fx'));
@@ -139,12 +140,15 @@ if (!reduced) {
     n.textContent = m[2];
     t.data = m[1];
     t.after(n);
-    fxOf.set(n, odometer(n, () => (fieldPrev === 0 ? m[2].replace(/\d/g, '0') : countOf(slides[fieldPrev])), 0.7));
+    const slide = p.closest('.slide');
+    if (slide) countText.set(slide, m[2]);
+    fxOf.set(n, odometer(n, () => (fieldPrev === 0 ? m[2].replace(/\d/g, '0') : countText.get(slides[fieldPrev]) ?? null), 0.7));
   });
   // film years roll like a meter from the film before; the first rewinds from the year this was written
   const years = $$('.reel .film__year');
+  const yearText = years.map((y) => (y.textContent || '').trim());
   const now = /\d{4}/.exec($('.nav__date')?.textContent || '')?.[0] ?? null;
-  years.forEach((y, i) => { y.classList.add('fx-x'); fxOf.set(y, odometer(y, () => (i ? years[i - 1].textContent : now))); });
+  years.forEach((y, i) => { y.classList.add('fx-x'); fxOf.set(y, odometer(y, () => (i ? yearText[i - 1] : now))); });
   $$('.reel .film__lesson').forEach(blurWords);
 }
 

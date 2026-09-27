@@ -552,7 +552,10 @@ h1, h2, h3 { text-wrap: balance; }
    .rv-d  display type: each word (.rw) rises through its own mask while its glyphs open from condensed
           to their set width and weight inside a word box locked to its resting width (main.ts)
    .lw    body copy: words wrapped only while their line rises behind its mask (motion/lines.ts)
-   Containers only fade; the words carry the motion, and nothing is blurred. */
+   Containers only fade; the words carry the motion. Body copy is never blurred. Blur is used only on short
+   display lines, always resolving to 0: the definition claim (4px, scrubbed), "That's godlike AI. That's ASI."
+   (14px, condensing from the dust), the film lessons (10px, BlurText) and the verdict (TrueFocus, scrubbed:
+   "Broadly right." up to 4.5px while focus moves on, "Slower pace." from 7px). */
 .rw { display: inline-block; }
 .sr-copy { user-select: none; }
 .lw { display: inline-block; overflow: clip; overflow-clip-margin: .3em; }
@@ -639,10 +642,11 @@ a > .lw > .lwi { text-decoration: inherit; text-decoration-color: currentColor; 
 @keyframes caret { 50% { opacity: 0; } }
 /* stats: digits keep one width while they count */
 .cu { font-variant-numeric: tabular-nums; }
-/* odometer (film years, field counts): digit strips clipped to each real glyph, over the hidden digits */
+/* odometer (film years, field counts): digit strips clipped to each real glyph, laid over the real number,
+   which only turns transparent while it rolls (never visibility: hidden, so it stays in the accessibility tree) */
 .odo { position: relative; }
-.odo.is-rolling { visibility: hidden; }
-.odo-o { position: absolute; inset: 0; visibility: visible; pointer-events: none; }
+.odo.is-rolling > .odo-t { color: transparent; -webkit-text-stroke-color: transparent; }
+.odo-o { position: absolute; inset: 0; pointer-events: none; }
 .odo-c { position: absolute; clip-path: inset(0 -.3em); }
 .odo-s { position: absolute; left: 0; top: 0; width: 100%; will-change: transform; }
 .odo-s > span { display: block; text-align: center; white-space: pre; }
@@ -662,8 +666,10 @@ a > .lw > .lwi { text-decoration: inherit; text-decoration-color: currentColor; 
   }
   .rv-busy .bw { will-change: transform, filter, opacity; }
 
-  /* reality-check statuses land like a stamp once the claim above them is set */
-  .entry__status.rv-c, .entry__status.rv-b { transform-origin: 0 55%; transition: opacity var(--rv-out) var(--rv-ease-out), transform var(--rv-out) var(--rv-ease-out); }
+  /* reality-check statuses land like a stamp once the claim above them is set. The stamp is the label's own
+     size, never the full-width row it sits in: scaled, a full-width row would widen the page (and a phone's
+     layout viewport with it) while it waits off screen */
+  .entry__status.rv-c, .entry__status.rv-b { width: fit-content; max-width: 100%; transform-origin: 0 55%; transition: opacity var(--rv-out) var(--rv-ease-out), transform var(--rv-out) var(--rv-ease-out); }
   [data-rv]:not([data-rv='in']) > .entry__status.rv-c, .entry__status.rv-b[data-rv]:not([data-rv='in']) { transform: scale(1.45) rotate(-5deg); }
   [data-rv='in'] > .entry__status.rv-c, .entry__status.rv-b[data-rv='in'] {
     transition: opacity .14s linear, transform .42s cubic-bezier(.12, .9, .2, 1);

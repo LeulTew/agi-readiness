@@ -282,11 +282,18 @@ export function countUp(b: HTMLElement, dur = 1.9): Fx {
 
 // ---------------------------------------------------------------- odometer: film years, field counts
 // Each digit rolls, like a counter wheel, from another number to its own: every column is a strip of
-// digits clipped to one glyph, laid exactly over the real (hidden) digit. Columns move together in one
-// direction (forward if the number grows, back if it shrinks), so 1968 -> 1970 carries like a meter.
-// At rest the overlay is removed and the plain text shows.
+// digits clipped to one glyph, laid exactly over the real digit. Columns move together in one direction
+// (forward if the number grows, back if it shrinks), so 1968 -> 1970 carries like a meter.
+// The real number is wrapped once (.odo-t) and only made transparent while it rolls, so it never leaves
+// the accessibility tree; the strips are aria-hidden. Both numbers are plain strings taken before any
+// overlay exists: an input is never read from an element that may itself be rolling.
 export function odometer(el: HTMLElement, from: () => string | null, dur = 1.05): Fx {
+  const to = labelOf(el);
   el.classList.add('odo');
+  const real = document.createElement('span');
+  real.className = 'odo-t';
+  real.append(...el.childNodes);
+  el.append(real);
   let over: HTMLElement | null = null;
   let tw: gsap.core.Timeline | null = null;
   const clear = () => { tw?.kill(); tw = null; over?.remove(); over = null; el.classList.remove('is-rolling'); };
@@ -295,11 +302,10 @@ export function odometer(el: HTMLElement, from: () => string | null, dur = 1.05)
     finish: clear,
     play(delay = 0) {
       clear();
-      const to = labelOf(el);
       const f = from();
       if (!f || f.length !== to.length || f === to || !/^\d+$/.test(to) || !/^\d+$/.test(f)) return;
       const dir = +to > +f ? 1 : -1;
-      const boxes = glyphBoxes(el, el);
+      const boxes = glyphBoxes(real, el);
       if (boxes.length !== to.length) return;
       over = document.createElement('span');
       over.className = 'odo-o';

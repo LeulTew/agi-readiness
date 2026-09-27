@@ -199,7 +199,7 @@ export function typeLine(p: HTMLElement) {
   p.classList.add('fx');
   const { wrap, chars } = splitChars(p, 'tc');
   wrap.classList.add('tt');
-  chars.forEach((c) => c.classList.add('is-off'));
+  chars.forEach((c) => { c.classList.add('is-off'); if (c.textContent === '…') c.classList.add('tc-ell'); });
   let state: 'idle' | 'armed' | 'typing' | 'done' = 'idle';
   let done: (() => void)[] = [];
   let timer = 0;

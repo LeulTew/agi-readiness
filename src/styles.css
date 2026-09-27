@@ -630,7 +630,9 @@ a > .lw > .lwi { text-decoration: inherit; text-decoration-color: currentColor; 
 .tt .tc.is-cur::after, .tt.is-armed .tc-w:first-child .tc:first-child::before {
   content: ''; position: absolute; top: .16em; bottom: .08em; width: .46em; background: currentColor; visibility: visible;
 }
-.tt .tc.is-cur::after { left: calc(100% + .06em); }
+.tt .tc.is-cur::after { left: calc(100% + .08em); }
+/* the ellipsis inks well past its advance box; keep the caret off its last dot */
+.tt .tc.tc-ell.is-cur::after { left: calc(100% + .36em); }
 .tt.is-armed .tc-w:first-child .tc:first-child::before { left: 0; animation: caret 1.06s steps(1) infinite; }
 .tt.is-blink .tc.is-cur::after { animation: caret .52s steps(1) 3; }
 .tt.is-done .tc::after, .tt.is-done .tc::before { content: none; }
